@@ -16,6 +16,8 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
+#include <vector>
 
 using namespace std;
 
@@ -54,7 +56,9 @@ int
 main(int argc, char ** argv)
 {
     string fName;
-
+    vector<int> xs;
+    vector<int> ys;
+    vector<int> zs;
     for(int i=0; i < argc; i++) {
         if (std::string(argv[i]) == "-f") {
 
@@ -73,15 +77,22 @@ main(int argc, char ** argv)
     }
 
     std::cout << "Reading from file: " << fName << std::endl;
-    std::ifstream input;
-    input.open(fName);
+    std::ifstream input(fName.c_str());
     if (input.fail()) {
         std::cerr << "Failed to open" << std::endl;
     }
-
-    int x, y, z;
-    while(input >> x >> y >> z) {
-        std::cout << "Parsed x:" << x << ", y:" << y << ", z: " << z << std::endl;
+    string currentLine;
+    while(std::getline(input, currentLine)) {
+        std::cout << currentLine << std::endl;
+        int x, y, z;
+        std::istringstream ss(currentLine);
+        if (!(ss >> x >> y >> z)) {
+            // std::cerr << "Cannot parse" << std::endl;
+        }
+        xs.push_back(x);
+        ys.push_back(y);
+        zs.push_back(z);
+        std::cout << "Parsed: " << x << " " << y << " " << z << std::endl;
     }
 
     std::cout << "Done" << std::endl;
