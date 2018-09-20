@@ -14,6 +14,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
+#include <string>
+#include <fstream>
+
+using namespace std;
 
 static char * buffer;
 static size_t buffer_size = 0;
@@ -49,9 +53,40 @@ buffer_writeaction(SoNode * root)
 int
 main(int argc, char ** argv)
 {
+    string fName;
 
-  std::cout << "Start" << std::endl;
+    for(int i=0; i < argc; i++) {
+        if (std::string(argv[i]) == "-f") {
 
+            if (i + 1 < argc) {
+                fName = std::string(argv[i]);
+            }
+            else {
+                std::cerr << "Must provide file name after -f argument" << std::endl;
+            }
+
+        }
+    }
+
+    if (fName.empty()) {
+        fName = "cpts_in.txt";
+    }
+
+    std::cout << "Reading from file: " << fName << std::endl;
+    std::ifstream input;
+    input.open(fName);
+    if (input.fail()) {
+        std::cerr << "Failed to open" << std::endl;
+    }
+
+    int x, y, z;
+    while(input >> x >> y >> z) {
+        std::cout << "Parsed x:" << x << ", y:" << y << ", z: " << z << std::endl;
+    }
+
+    std::cout << "Done" << std::endl;
+
+    /*
   SoDB::init();
 
   SoSeparator * root = new SoSeparator;
@@ -63,5 +98,6 @@ main(int argc, char ** argv)
   (void)fprintf(stdout, "%s\n", s.getString());
 
   root->unref();
+     */
   return 0;
 }

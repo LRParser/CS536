@@ -1,0 +1,3 @@
+/home/joe/CS536/hw1/OpenInventorTest/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/joe/CS536/hw1/OpenInventorTest/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/joe/CS536/hw1/OpenInventorTest/cmake-build-debug/CMakeFiles/dummy.dir

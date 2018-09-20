@@ -1,0 +1,1 @@
+/usr/bin/c++  -I /usr/include/Inventor -lInventor -std=c++11 -g   CMakeFiles/dummy.dir/OITest.cpp.o  -o dummy  -L/home/joe/open-inventor/usr/lib -Wl,-rpath,/home/joe/open-inventor/usr/lib -lInventor 
