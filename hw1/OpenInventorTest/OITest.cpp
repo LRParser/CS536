@@ -11,6 +11,12 @@
 #include <Inventor/nodes/SoCube.h>
 #include <Inventor/nodes/SoSphere.h>
 #include <Inventor/nodes/SoSeparator.h>
+#include <Inventor/nodes/SoTransform.h>
+#include <Inventor/nodes/SoLightModel.h>
+#include <Inventor/nodes/SoMaterial.h>
+#include <Inventor/nodes/SoTranslation.h>
+#include <Inventor/fields/SoSFVec3f.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
@@ -24,6 +30,7 @@ using namespace std;
 static char * buffer;
 static size_t buffer_size = 0;
 
+// From OpenInventor library
 static void *
 buffer_realloc(void * bufptr, size_t size)
 {
@@ -32,33 +39,14 @@ buffer_realloc(void * bufptr, size_t size)
   return buffer;
 }
 
-static SbString
-buffer_writeaction(SoNode * root)
-{
-  SoOutput out;
-  buffer = (char *)malloc(1024);
-  buffer_size = 1024;
-  out.setBuffer(buffer, buffer_size, buffer_realloc);
-
-  SoWriteAction wa(&out);
-  wa.getOutput()->openFile( "output.iv" );
-  //wa.getOutput()->setBinary( FALSE );  // Optional: write binary format
-
-  wa.apply(root);
-  SbString s(buffer);
-  wa.getOutput()->closeFile();
-
-  free(buffer);
-  return s;
-}
 
 int
 main(int argc, char ** argv)
 {
     string fName;
-    vector<int> xs;
-    vector<int> ys;
-    vector<int> zs;
+    vector<float> xs;
+    vector<float> ys;
+    vector<float> zs;
     for(int i=0; i < argc; i++) {
         if (std::string(argv[i]) == "-f") {
 
@@ -84,7 +72,7 @@ main(int argc, char ** argv)
     string currentLine;
     while(std::getline(input, currentLine)) {
         std::cout << currentLine << std::endl;
-        int x, y, z;
+        float x, y, z;
         std::istringstream ss(currentLine);
         if (!(ss >> x >> y >> z)) {
             // std::cerr << "Cannot parse" << std::endl;
@@ -97,18 +85,49 @@ main(int argc, char ** argv)
 
     std::cout << "Done" << std::endl;
 
-    /*
-  SoDB::init();
 
-  SoSeparator * root = new SoSeparator;
-  root->ref();
+    SoDB::init();
 
-  root->addChild(new SoSphere);
+    SoSeparator* root = new SoSeparator;
+    root->ref();
 
-  SbString s = buffer_writeaction(root);
-  (void)fprintf(stdout, "%s\n", s.getString());
+    std::cout << "Start" << std::endl;
 
-  root->unref();
-     */
-  return 0;
+    for (const int& i : xs) {
+        std::cout << i << std::endl;
+        SoSeparator* cpSep;
+        root->addChild(cpSep);
+
+        float x = xs.at(i);
+        float y = ys.at(i);
+        float z = zs.at(i);
+        std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+
+        /*
+        SoTranslation* translation = new SoTranslation;
+        translation->translation.setValue(x,y,z);
+        cpSep->addChild(translation);
+        cpSep->addChild(new SoSphere);
+         */
+
+    }
+
+
+    SoOutput out;
+    buffer = (char *)malloc(1024);
+    buffer_size = 1024;
+    out.setBuffer(buffer, buffer_size, buffer_realloc);
+
+    SoWriteAction wa(&out);
+    wa.getOutput()->openFile( "output.iv" );
+    //wa.getOutput()->setBinary( FALSE );  // Optional: write binary format
+
+    wa.apply(root);
+    wa.getOutput()->closeFile();
+
+    free(buffer);
+
+    root->unref();
+   
+    return 0;
 }
