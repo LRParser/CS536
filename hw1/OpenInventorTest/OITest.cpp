@@ -22,11 +22,13 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <map>
 
 using namespace std;
 
@@ -49,6 +51,51 @@ struct point {
     float y;
     float z;
 };
+
+point pointMult(double factor, point srcPt) {
+    point newPoint;
+    newPoint.x = srcPt.x * factor;
+    newPoint.y = srcPt.y * factor;
+    newPoint.z = srcPt.z * factor;
+    return newPoint;
+}
+
+point pointAdd(point point1, point point2) {
+    point point3;
+    point3.x = point1.x + point2.x;
+    point3.y = point1.y + point2.y;
+    point3.z = point1.z + point2.z;
+    return point3;
+}
+
+map<int,float> factorialMap;
+
+
+float fact(int i) {
+    if (i == 0) {
+        return 1;
+    }
+    else {
+        return i * fact(i-1);
+    }
+    /*
+    auto iter = factorialMap.find(i);
+    if (iter != factorialMap.end()) {
+       return iter->second;
+    }
+    else {
+        float retVal = i * fact(i-1);
+        factorialMap.insert(std::pair<int,int>(i,retVal));
+        return retVal;
+    }
+     */
+}
+
+
+
+float nchoosei(float n, float i) {
+    return fact(n) / (fact(i)*fact(n-i));
+}
 
 
 int
@@ -117,26 +164,53 @@ main(int argc, char ** argv)
         translation->translation.setValue(x,y,z);
         cpSep->addChild(translation);
         SoSphere* sphere = new SoSphere();
-        sphere->radius = .05;
+        sphere->radius = .1;
         cpSep->addChild(sphere);
     }
 
     SoSeparator* interpolatedSeperator = new SoSeparator;
 
     SoCoordinate3* interpolatedPoints = new SoCoordinate3();
-    for(int i = 0; i < 5; i++) {
-        interpolatedPoints->point.set1Value(i,i,i,i);
+    SoIndexedLineSet* indexedLineSet = new SoIndexedLineSet;
+
+
+    float du = 0.05;
+    float u = 0.0;
+    int n = (int) points.size();
+
+    vector<point> calcPoints;
+    while(u <= 1.0) {
+        point currentPoint;
+        currentPoint.x = 0.0;
+        currentPoint.y = 0.0;
+        currentPoint.z = 0.0;
+
+        for(int i = 0; i < n; i++) {
+            point controlPoint = points.at(i);
+
+            double factor = nchoosei(n,i) * pow(1-u,n-i) * pow(u,i);
+            point calcPoint = pointMult(factor,controlPoint);
+            currentPoint = pointAdd(currentPoint,calcPoint);
+
+        }
+        calcPoints.push_back(currentPoint);
+
+        u += du;
     }
+
+
+    int i = 0;
+    for(auto it = calcPoints.begin(); it != calcPoints.end(); it++) {
+        interpolatedPoints->point.set1Value(i,it->x,it->y,it->z);
+        indexedLineSet->coordIndex.set1Value(i,i);
+
+        i++;
+    }
+    indexedLineSet->coordIndex.set1Value(i,-1);
+    
 
     interpolatedSeperator->addChild(interpolatedPoints);
 
-    SoIndexedLineSet* indexedLineSet = new SoIndexedLineSet;
-    indexedLineSet->coordIndex.set1Value(0,0);
-    indexedLineSet->coordIndex.set1Value(1,1);
-    indexedLineSet->coordIndex.set1Value(2,2);
-    indexedLineSet->coordIndex.set1Value(3,3);
-    indexedLineSet->coordIndex.set1Value(4,4);
-    indexedLineSet->coordIndex.set1Value(5,-1);
 
     interpolatedSeperator->addChild(indexedLineSet);
 
