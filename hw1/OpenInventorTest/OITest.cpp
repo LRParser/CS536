@@ -9,13 +9,16 @@
 #include <Inventor/actions/SoWriteAction.h>
 #include <Inventor/nodes/SoCone.h>
 #include <Inventor/nodes/SoCube.h>
+#include <Inventor/nodes/SoIndexedLineSet.h>
+#include <Inventor/nodes/SoMaterial.h>
 #include <Inventor/nodes/SoSphere.h>
 #include <Inventor/nodes/SoSeparator.h>
 #include <Inventor/nodes/SoTransform.h>
 #include <Inventor/nodes/SoLightModel.h>
 #include <Inventor/nodes/SoMaterial.h>
 #include <Inventor/nodes/SoTranslation.h>
-#include <Inventor/fields/SoSFVec3f.h>
+#include <Inventor/fields/SoMFVec3f.h>
+#include <Inventor/nodes/SoCoordinate3.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,12 +30,12 @@
 
 using namespace std;
 
+// From OpenInventor library
+
 static char * buffer;
 static size_t buffer_size = 0;
 
-// From OpenInventor library
-static void *
-buffer_realloc(void * bufptr, size_t size)
+static void * buffer_realloc(void * bufptr, size_t size)
 {
   buffer = (char *)realloc(bufptr, size);
   buffer_size = size;
@@ -40,13 +43,20 @@ buffer_realloc(void * bufptr, size_t size)
 }
 
 
+
+struct point {
+    float x;
+    float y;
+    float z;
+};
+
+
 int
 main(int argc, char ** argv)
 {
     string fName;
-    vector<float> xs;
-    vector<float> ys;
-    vector<float> zs;
+    vector<point> points;
+
     for(int i=0; i < argc; i++) {
         if (std::string(argv[i]) == "-f") {
 
@@ -72,15 +82,14 @@ main(int argc, char ** argv)
     string currentLine;
     while(std::getline(input, currentLine)) {
         std::cout << currentLine << std::endl;
-        float x, y, z;
+        point point1;
         std::istringstream ss(currentLine);
-        if (!(ss >> x >> y >> z)) {
+        if (!(ss >> point1.x >> point1.y >> point1.z)) {
             // std::cerr << "Cannot parse" << std::endl;
         }
-        xs.push_back(x);
-        ys.push_back(y);
-        zs.push_back(z);
-        std::cout << "Parsed: " << x << " " << y << " " << z << std::endl;
+        points.push_back(point1);
+
+        std::cout << "Parsed: " << point1.x << " " << point1.y << " " << point1.z << std::endl;
     }
 
     std::cout << "Done" << std::endl;
@@ -93,24 +102,46 @@ main(int argc, char ** argv)
 
     std::cout << "Start" << std::endl;
 
-    for (const int& i : xs) {
-        std::cout << i << std::endl;
-        SoSeparator* cpSep;
+    for (auto it = points.begin(); it != points.end(); it++) {
+
+        SoSeparator* cpSep = new SoSeparator();
         root->addChild(cpSep);
 
-        float x = xs.at(i);
-        float y = ys.at(i);
-        float z = zs.at(i);
+        float x = it->x;
+        float y = it->y;
+        float z = it->z;
         std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
 
-        /*
+
         SoTranslation* translation = new SoTranslation;
         translation->translation.setValue(x,y,z);
         cpSep->addChild(translation);
-        cpSep->addChild(new SoSphere);
-         */
-
+        SoSphere* sphere = new SoSphere();
+        sphere->radius = .05;
+        cpSep->addChild(sphere);
     }
+
+    SoSeparator* interpolatedSeperator = new SoSeparator;
+
+    SoCoordinate3* interpolatedPoints = new SoCoordinate3();
+    for(int i = 0; i < 5; i++) {
+        interpolatedPoints->point.set1Value(i,i,i,i);
+    }
+
+    interpolatedSeperator->addChild(interpolatedPoints);
+
+    SoIndexedLineSet* indexedLineSet = new SoIndexedLineSet;
+    indexedLineSet->coordIndex.set1Value(0,0);
+    indexedLineSet->coordIndex.set1Value(1,1);
+    indexedLineSet->coordIndex.set1Value(2,2);
+    indexedLineSet->coordIndex.set1Value(3,3);
+    indexedLineSet->coordIndex.set1Value(4,4);
+    indexedLineSet->coordIndex.set1Value(5,-1);
+
+    interpolatedSeperator->addChild(indexedLineSet);
+
+    root->addChild(interpolatedSeperator);
+
 
 
     SoOutput out;
