@@ -33,7 +33,6 @@
 using namespace std;
 
 // From OpenInventor library
-
 static char * buffer;
 static size_t buffer_size = 0;
 
@@ -43,6 +42,8 @@ static void * buffer_realloc(void * bufptr, size_t size)
   buffer_size = size;
   return buffer;
 }
+// End example from OpenInventor library docs
+
 
 bool debug = false;
 
@@ -209,24 +210,14 @@ main(int argc, char ** argv)
 
     float u = 0.0;
     int k = (int) points.size() - 1;
-    cout << "Number of points is: " << k << endl;
+
+    if(debug) {
+        cout << "Number of points is: " << k << endl;
+    }
     vector<point> calcPoints;
 
-    point point0 = points.at(0);
-    point point1 = points.at(1);
-    point point2 = points.at(2);
-    point point3 = points.at(3);
 
     while(u <= 1.0) {
-
-        /*
-        double factor0 = pow(1-u,3);
-        double factor1 = 3*(pow(1-u,2)*u);
-        double factor2 = 3*(1-u)*pow(u,2);
-        double factor3 = pow(u,3);
-        cout << "Factor 0: " << factor0 << ", Factor 1: " << factor1 << ", Factor 2: " << factor2 << " Factor 3: " << factor3 << endl;
-        point current = pointMult(factor0,point0) + pointMult(factor1,point1) + pointMult(factor2,point2) + pointMult(factor3,point3);
-        */
 
         point currentPoint;
         currentPoint.x = 0.0;
@@ -235,18 +226,18 @@ main(int argc, char ** argv)
 
         for(int i = 0; i <= k; i++) {
             point controlPoint = points.at(i);
-            // std::cout << "Parsed: " << controlPoint.x << " " << controlPoint.y << " " << controlPoint.z << std::endl;
 
             double factor = kchoosei(k, i) * pow(1-u,k-i) * pow(u,i);
-            cout << "     i is: " << i << " factor is: " << factor << endl;
+            if(debug) {
+                cout << "     i is: " << i << " factor is: " << factor << endl;
+            }
+
             point calcPoint = pointMult(factor,controlPoint);
             currentPoint = pointAdd(currentPoint,calcPoint);
 
         }
 
         calcPoints.push_back(currentPoint);
-
-
 
         u += du;
     }
@@ -266,20 +257,20 @@ main(int argc, char ** argv)
     interpolatedSeperator->addChild(indexedLineSet);
     root->addChild(interpolatedSeperator);
 
-
-    SoOutput out;
+    // Inspired by OpenInventor library docs
+    SoOutput inventorOut;
     buffer = (char *)malloc(1024);
     buffer_size = 1024;
-    out.setBuffer(buffer, buffer_size, buffer_realloc);
+    inventorOut.setBuffer(buffer, buffer_size, buffer_realloc);
 
-    SoWriteAction wa(&out);
+    SoWriteAction writeAction(&inventorOut);
 
-    wa.apply(root);
+    writeAction.apply(root);
 
-    SbString sbString(buffer);
+    SbString contentsString(buffer);
     free(buffer);
 
-    cout << sbString.getString() << endl;
+    cout << contentsString.getString() << endl;
 
     root->unref();
    
