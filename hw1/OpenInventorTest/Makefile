@@ -1,21 +1,21 @@
 CC=gcc
-CXX=g++
+CXX=g++ -std=c++11
 RM=rm -f
 
-SRCS=OITest.cpp
+SRCS=CG_hw1.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
-all: oitest 
+default: all
 
-oitest: $(OBJS)
-	$(CXX) -I /usr/include/Inventor -o oitest $(OBJS) -lInventor
+all: CG_hw1
 
-oitest.o: OITest.cpp
+CG_hw1: $(OBJS)
+	$(CXX) -I /usr/include/Inventor -o CG_hw1 $(OBJS) -lInventor
 
-support.o: support.hh support.cc
+CG_hw1.o: CG_hw1.cpp
 
 clean:
-	$(RM) $(OBJS)
+	$(RM) $(OBJS) CG_hw1
 
-distclean: clean
-	$(RM) oitest
+run: all
+	./CG_hw1 -f cpts_in.txt -u 0.05 -r 0.1 > out.iv

@@ -44,6 +44,8 @@ static void * buffer_realloc(void * bufptr, size_t size)
   return buffer;
 }
 
+bool debug = false;
+
 
 
 struct point {
@@ -75,20 +77,18 @@ float fact(int i) {
     if (i == 0) {
         return 1;
     }
-    else {
-        return i * fact(i-1);
-    }
-    /*
-    auto iter = factorialMap.find(i);
-    if (iter != factorialMap.end()) {
-       return iter->second;
-    }
-    else {
+
+    // Memoize for performance
+    //auto iter = factorialMap.find(i);
+    //if (iter != factorialMap.end()) {
+    //    return iter->second;
+   // }
+    //else {
         float retVal = i * fact(i-1);
-        factorialMap.insert(std::pair<int,int>(i,retVal));
+     //   factorialMap.insert(std::pair<int,int>(i,retVal));
         return retVal;
-    }
-     */
+    // }
+
 }
 
 
@@ -102,18 +102,37 @@ int
 main(int argc, char ** argv)
 {
     string fName;
+    float du = 0.05;
+    float radius = 0.1;
     vector<point> points;
 
     for(int i=0; i < argc; i++) {
         if (std::string(argv[i]) == "-f") {
 
             if (i + 1 < argc) {
-                fName = std::string(argv[i]);
+                fName = std::string(argv[i + 1]);
             }
             else {
                 std::cerr << "Must provide file name after -f argument" << std::endl;
             }
+        }
+        else if (std::string(argv[i]) == "-u") {
 
+            if (i + 1 < argc) {
+                du = std::stof(std::string(argv[i + 1]));
+            }
+            else {
+                std::cerr << "Must provide du value after -u argument" << std::endl;
+            }
+        }
+        else if (std::string(argv[i]) == "-r") {
+
+            if (i + 1 < argc) {
+                radius = std::stof(std::string(argv[i + 1]));
+            }
+            else {
+                std::cerr << "Must provide radius value after -r argument" << std::endl;
+            }
         }
     }
 
@@ -121,25 +140,33 @@ main(int argc, char ** argv)
         fName = "cpts_in.txt";
     }
 
-    std::cout << "Reading from file: " << fName << std::endl;
+    if (debug) {
+        std::cout << "Reading from file: " << fName << std::endl;
+    }
     std::ifstream input(fName.c_str());
     if (input.fail()) {
         std::cerr << "Failed to open" << std::endl;
     }
     string currentLine;
     while(std::getline(input, currentLine)) {
-        std::cout << currentLine << std::endl;
+
+        if(debug) {
+            std::cout << currentLine << std::endl;
+        }
         point point1;
         std::istringstream ss(currentLine);
-        if (!(ss >> point1.x >> point1.y >> point1.z)) {
-            // std::cerr << "Cannot parse" << std::endl;
-        }
+        ss >> point1.x >> point1.y >> point1.z;
+
         points.push_back(point1);
 
-        std::cout << "Parsed: " << point1.x << " " << point1.y << " " << point1.z << std::endl;
+        if (debug) {
+            std::cout << "Parsed: " << point1.x << " " << point1.y << " " << point1.z << std::endl;
+        }
     }
 
-    std::cout << "Done" << std::endl;
+    if (debug) {
+        std::cout << "Done" << std::endl;
+    }
 
 
     SoDB::init();
@@ -147,7 +174,6 @@ main(int argc, char ** argv)
     SoSeparator* root = new SoSeparator;
     root->ref();
 
-    std::cout << "Start" << std::endl;
 
     for (auto it = points.begin(); it != points.end(); it++) {
 
@@ -157,14 +183,17 @@ main(int argc, char ** argv)
         float x = it->x;
         float y = it->y;
         float z = it->z;
-        std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+
+        if(debug) {
+            std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+        }
 
 
         SoTranslation* translation = new SoTranslation;
         translation->translation.setValue(x,y,z);
         cpSep->addChild(translation);
         SoSphere* sphere = new SoSphere();
-        sphere->radius = .1;
+        sphere->radius = radius;
         cpSep->addChild(sphere);
     }
 
@@ -174,7 +203,6 @@ main(int argc, char ** argv)
     SoIndexedLineSet* indexedLineSet = new SoIndexedLineSet;
 
 
-    float du = 0.05;
     float u = 0.0;
     int n = (int) points.size();
 
@@ -207,15 +235,10 @@ main(int argc, char ** argv)
         i++;
     }
     indexedLineSet->coordIndex.set1Value(i,-1);
-    
 
     interpolatedSeperator->addChild(interpolatedPoints);
-
-
     interpolatedSeperator->addChild(indexedLineSet);
-
     root->addChild(interpolatedSeperator);
-
 
 
     SoOutput out;
@@ -224,13 +247,14 @@ main(int argc, char ** argv)
     out.setBuffer(buffer, buffer_size, buffer_realloc);
 
     SoWriteAction wa(&out);
-    wa.getOutput()->openFile( "output.iv" );
-    //wa.getOutput()->setBinary( FALSE );  // Optional: write binary format
+    // wa.getOutput()->openFile( "output.iv" );
 
     wa.apply(root);
-    wa.getOutput()->closeFile();
 
+    SbString sbString(buffer);
     free(buffer);
+
+    cout << sbString.getString() << endl;
 
     root->unref();
    
