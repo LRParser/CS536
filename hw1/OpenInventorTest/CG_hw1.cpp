@@ -46,12 +46,15 @@ static void * buffer_realloc(void * bufptr, size_t size)
 
 bool debug = false;
 
-
-
 struct point {
-    float x;
-    float y;
-    float z;
+    double x;
+    double y;
+    double z;
+
+    point operator+(point a) {
+        return {a.x+x,a.y+y,a.z+z};
+    }
+
 };
 
 point pointMult(double factor, point srcPt) {
@@ -73,34 +76,35 @@ point pointAdd(point point1, point point2) {
 map<int,float> factorialMap;
 
 
-float fact(int i) {
-    if (i == 0) {
+float fact(int k) {
+    if (k == 0) {
         return 1;
     }
 
     // Memoize for performance
-    //auto iter = factorialMap.find(i);
-    //if (iter != factorialMap.end()) {
-    //    return iter->second;
-   // }
-    //else {
-        float retVal = i * fact(i-1);
-     //   factorialMap.insert(std::pair<int,int>(i,retVal));
+    auto iter = factorialMap.find(k);
+    if (iter != factorialMap.end()) {
+       return iter->second;
+    }
+    else {
+        float retVal = k * fact(k-1);
+        factorialMap.insert(std::pair<int,int>(k,retVal));
         return retVal;
-    // }
+    }
 
 }
 
 
 
-float nchoosei(float n, float i) {
-    return fact(n) / (fact(i)*fact(n-i));
+float kchoosei(int k, int i) {
+    return fact(k) / (fact(i)*fact(k-i));
 }
 
 
 int
 main(int argc, char ** argv)
 {
+
     string fName;
     float du = 0.05;
     float radius = 0.1;
@@ -180,14 +184,14 @@ main(int argc, char ** argv)
         SoSeparator* cpSep = new SoSeparator();
         root->addChild(cpSep);
 
-        float x = it->x;
-        float y = it->y;
-        float z = it->z;
+
+        double x = it->x;
+        double y = it->y;
+        double z = it->z;
 
         if(debug) {
             std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
         }
-
 
         SoTranslation* translation = new SoTranslation;
         translation->translation.setValue(x,y,z);
@@ -204,27 +208,49 @@ main(int argc, char ** argv)
 
 
     float u = 0.0;
-    int n = (int) points.size();
-
+    int k = (int) points.size() - 1;
+    cout << "Number of points is: " << k << endl;
     vector<point> calcPoints;
+
+    point point0 = points.at(0);
+    point point1 = points.at(1);
+    point point2 = points.at(2);
+    point point3 = points.at(3);
+
     while(u <= 1.0) {
+
+        /*
+        double factor0 = pow(1-u,3);
+        double factor1 = 3*(pow(1-u,2)*u);
+        double factor2 = 3*(1-u)*pow(u,2);
+        double factor3 = pow(u,3);
+        cout << "Factor 0: " << factor0 << ", Factor 1: " << factor1 << ", Factor 2: " << factor2 << " Factor 3: " << factor3 << endl;
+        point current = pointMult(factor0,point0) + pointMult(factor1,point1) + pointMult(factor2,point2) + pointMult(factor3,point3);
+        */
+
         point currentPoint;
         currentPoint.x = 0.0;
         currentPoint.y = 0.0;
         currentPoint.z = 0.0;
 
-        for(int i = 0; i < n; i++) {
+        for(int i = 0; i <= k; i++) {
             point controlPoint = points.at(i);
+            // std::cout << "Parsed: " << controlPoint.x << " " << controlPoint.y << " " << controlPoint.z << std::endl;
 
-            double factor = nchoosei(n,i) * pow(1-u,n-i) * pow(u,i);
+            double factor = kchoosei(k, i) * pow(1-u,k-i) * pow(u,i);
+            cout << "     i is: " << i << " factor is: " << factor << endl;
             point calcPoint = pointMult(factor,controlPoint);
             currentPoint = pointAdd(currentPoint,calcPoint);
 
         }
+
         calcPoints.push_back(currentPoint);
+
+
 
         u += du;
     }
+
 
 
     int i = 0;
@@ -247,7 +273,6 @@ main(int argc, char ** argv)
     out.setBuffer(buffer, buffer_size, buffer_realloc);
 
     SoWriteAction wa(&out);
-    // wa.getOutput()->openFile( "output.iv" );
 
     wa.apply(root);
 
