@@ -106,6 +106,7 @@ float kchoosei(int k, int i) {
 int
 main(int argc, char ** argv)
 {
+
     string fName;
     vector<point> points;
 
@@ -181,7 +182,7 @@ main(int argc, char ** argv)
 
     float du = 0.025;
     float u = 0.0;
-    int k = (int) points.size();
+    int k = (int) points.size() - 1;
     cout << "Number of points is: " << k << endl;
     vector<point> calcPoints;
 
@@ -196,26 +197,31 @@ main(int argc, char ** argv)
 
     while(u <= 1.0) {
 
+        double factor0 = pow(1-u,3);
+        double factor1 = 3*(pow(1-u,2)*u);
+        double factor2 = 3*(1-u)*pow(u,2);
+        double factor3 = pow(u,3);
+        cout << "Factor 0: " << factor0 << ", Factor 1: " << factor1 << ", Factor 2: " << factor2 << " Factor 3: " << factor3 << endl;
+        point current = pointMult(factor0,point0) + pointMult(factor1,point1) + pointMult(factor2,point2) + pointMult(factor3,point3);
+        calcPoints.push_back(current);
 
-        point currentPoint = pointMult(pow(1-u,3),point0) + pointMult(3*(pow(1-u,2)*u),point1) + pointMult((3*(1-u)*pow(u,2)),point2) + pointMult(pow(u,3),point3);
 
-        /*
         point currentPoint;
         currentPoint.x = 0.0;
         currentPoint.y = 0.0;
         currentPoint.z = 0.0;
 
-        for(int i = 0; i < k; i++) {
+        for(int i = 0; i <= k; i++) {
             point controlPoint = points.at(i);
-            std::cout << "Parsed: " << controlPoint.x << " " << controlPoint.y << " " << controlPoint.z << std::endl;
+            // std::cout << "Parsed: " << controlPoint.x << " " << controlPoint.y << " " << controlPoint.z << std::endl;
 
             double factor = kchoosei(k, i) * pow(1-u,k-i) * pow(u,i);
+            cout << "     i is: " << i << " factor is: " << factor << endl;
             point calcPoint = pointMult(factor,controlPoint);
             currentPoint = pointAdd(currentPoint,calcPoint);
 
         }
-         */
-        calcPoints.push_back(currentPoint);
+
 
         u += du;
     }
