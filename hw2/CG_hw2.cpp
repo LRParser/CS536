@@ -53,11 +53,15 @@ struct point {
     double z;
 
     point operator+(point a) {
-        return {a.x+x,a.y+y,a.z+z};
+        return {x+a.x,y+a.y,z+a.z};
     }
 
-    point operator*(point a) {
-        return {a.x*x,a.y*y,a.z*z};
+    point operator-(point a) {
+        return {x-a.x,y-a.y,z-a.z};
+    }
+
+    point operator*(double a) {
+        return {a*x,a*y,a*z};
     }
 
 };
@@ -111,7 +115,7 @@ main(int argc, char ** argv)
 {
 
     string fName;
-    float du = 0.05;
+    float du = 0.09;
     float radius = 0.1;
 
     for(int i=0; i < argc; i++) {
@@ -155,9 +159,9 @@ main(int argc, char ** argv)
     if (input.fail()) {
         std::cerr << "Failed to open" << std::endl;
     }
+    point tangent0;
     point tangent1;
-    point tangent2;
-    vector<point> points;
+    vector<point> parsedPoints;
 
     string currentLine;
     int i = 0;
@@ -171,13 +175,13 @@ main(int argc, char ** argv)
         ss >> point1.x >> point1.y >> point1.z;
 
         if (i == 0) {
-            tangent1 = point1;
+            tangent0 = point1;
         }
         else if(i == 1) {
-            tangent2 = point1;
+            tangent1 = point1;
         }
         else {
-            points.push_back(point1);
+            parsedPoints.push_back(point1);
         }
 
         i = i + 1;
@@ -192,29 +196,66 @@ main(int argc, char ** argv)
     }
 
     // Convert the tangents and points (which are in Hermite form) into Bezier form
+    // We specify the tangents at the first and last input points
+    vector<vector<point>> curves;
 
-    vector<point> bezierPoints;
-    points.insert(points.begin() + 1,tangent1);
-    points.insert(points.begin() + 3, tangent2);
-    int n = (int) points.size();
-    for (int i=0; i < n; i++) {
-        // Ensure we have at least 3 more elements ahead
-        point point0 = points.at(0);
-        point point1 = point0 + (1/3.0)*points.at(1);
-        point point2 = points.at(2) - (1/3.0)*;
-        point t1 = points.at(3);
-        po
+    int parsedLen = (int) parsedPoints.size();
 
-        i = i + 1;
+    for(int i = 0; i < parsedLen; i= i + 2) {
+
+        vector<point> points;
+
+        if (i < parsedLen - 1) {
+
+            point pk = parsedPoints.at(i);
+
+            point pkplus1 = parsedPoints.at(i+1);
+            point q0 = parsedPoints.at(i);
+            point q1 = parsedPoints.at(i+1);
+
+            point t0;
+            point t1;
+
+
+            if (i == 0) {
+                t0 = tangent0;
+            }
+            else {
+                point pkminus1 = parsedPoints.at(i-1);
+                t0 = (pkplus1-pkminus1)*0.5;
+            }
+
+            if (i + 2 == parsedLen) {
+                t1 = tangent1;
+            }
+            else {
+                point pkplus2 = parsedPoints.at(i+2);
+                t1 = (pkplus2-pk)*0.5;
+            }
+
+            points.push_back(pk);
+            points.push_back(pk + (t0*(1/3.0)));
+            points.push_back(pkplus1 - (t1*(1/3.0)));
+            points.push_back(pkplus1);
+
+        }
+
+        curves.push_back(points);
     }
+
+    /*
+    points.push_back(parsedPoints.at(0));
+    points.push_back(parsedPoints.at(0) + (tangent0*(1/3.0)));
+    points.push_back(parsedPoints.at(1) - (tangent1*(1/3.0)));
+    points.push_back(parsedPoints.at(1));
+    */
 
     SoDB::init();
 
     SoSeparator* root = new SoSeparator;
     root->ref();
 
-
-    for (auto it = points.begin(); it != points.end(); it++) {
+    for (auto it = parsedPoints.begin(); it != parsedPoints.end(); it++) {
 
         SoSeparator* cpSep = new SoSeparator();
         root->addChild(cpSep);
@@ -240,6 +281,15 @@ main(int argc, char ** argv)
 
     SoCoordinate3* interpolatedPoints = new SoCoordinate3();
     SoIndexedLineSet* indexedLineSet = new SoIndexedLineSet;
+    vector<point> calcPoints;
+
+    for (auto cIt = curves.begin(); cIt != curves.end(); cIt++) {
+
+
+    vector<point> points = *cIt;
+
+
+
 
 
     float u = 0.0;
@@ -248,7 +298,6 @@ main(int argc, char ** argv)
     if(debug) {
         cout << "Number of points is: " << k << endl;
     }
-    vector<point> calcPoints;
 
 
     while(u <= 1.0) {
@@ -276,20 +325,24 @@ main(int argc, char ** argv)
         u += du;
     }
 
+    }
 
-
-    int i = 0;
+    i = 0;
     for(auto it = calcPoints.begin(); it != calcPoints.end(); it++) {
         interpolatedPoints->point.set1Value(i,it->x,it->y,it->z);
         indexedLineSet->coordIndex.set1Value(i,i);
 
         i++;
     }
+
+
+
     indexedLineSet->coordIndex.set1Value(i,-1);
 
     interpolatedSeperator->addChild(interpolatedPoints);
     interpolatedSeperator->addChild(indexedLineSet);
     root->addChild(interpolatedSeperator);
+
 
     // Inspired by OpenInventor library docs
     SoOutput inventorOut;

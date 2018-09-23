@@ -17,5 +17,8 @@ CG_hw2.o: CG_hw2.cpp
 clean:
 	$(RM) $(OBJS) CG_hw2
 
+debug: all
+	./CG_hw2 -f cpts_test2.txt -u 0.0303 -r 0.1
+
 run: all
-	./CG_hw2 -f cpts_in.txt -u 0.05 -r 0.1 > out.iv
+	./CG_hw2 -f cpts_test2.txt -u 0.0303 -r 0.1 > out.iv && ivview out.iv
