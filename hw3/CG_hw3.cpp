@@ -88,8 +88,10 @@ main(int argc, char ** argv)
 {
 
     string fName;
-    float du = 0.09;
+    float u = 11.0;
+    float v = 11.0;
     float radius = 0.1;
+    bool shadeWithNormals = false;
 
     for(int i=0; i < argc; i++) {
         if (std::string(argv[i]) == "-f") {
@@ -104,10 +106,19 @@ main(int argc, char ** argv)
         else if (std::string(argv[i]) == "-u") {
 
             if (i + 1 < argc) {
-                du = std::stof(std::string(argv[i + 1]));
+                u = std::stof(std::string(argv[i + 1]));
             }
             else {
-                std::cerr << "Must provide du value after -u argument" << std::endl;
+                std::cerr << "Must provide num_u value after -u argument" << std::endl;
+            }
+        }
+        else if (std::string(argv[i]) == "-v") {
+
+            if (i + 1 < argc) {
+                v = std::stof(std::string(argv[i + 1]));
+            }
+            else {
+                std::cerr << "Must provide num_v value after -v argument" << std::endl;
             }
         }
         else if (std::string(argv[i]) == "-r") {
@@ -119,10 +130,20 @@ main(int argc, char ** argv)
                 std::cerr << "Must provide radius value after -r argument" << std::endl;
             }
         }
+        else if (std::string(argv[i]) == "-F") {
+
+            shadeWithNormals = false;
+        }
+        else if (std::string(argv[i]) == "-S") {
+            shadeWithNormals = true;
+        }
     }
 
+    float du = 1/(u-1);
+    float dv = 1/(v-1);
+
     if (fName.empty()) {
-        fName = "cpts_test0.txt";
+        fName = "patchPoints.txt";
     }
 
     if (debug) {

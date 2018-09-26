@@ -122,7 +122,7 @@ main(int argc, char ** argv)
     }
 
     if (fName.empty()) {
-        fName = "cpts_test0.txt";
+        fName = "cpts_in.txt";
     }
 
     if (debug) {

@@ -1,0 +1,6 @@
+CS536: Computer Graphics
+Prof. Breen
+
+Assignment 1
+
+My program supports interpolating/drawing a 3D Bezier curve based on an arbitrary number of control points. The curve is approximated with a polyline. It is written in C++ on Ubuntu 16.04, using the g++ compiler. The main() function is contained in CG_HW1.cpp. The class Node.cpp implements a simple means of "writing out" the created graphics objects in Open Inventor format.
