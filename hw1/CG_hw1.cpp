@@ -231,7 +231,6 @@ main(int argc, char ** argv)
         Node* cpSep = new Node("Separator {","","}");
         root->addChild(cpSep);
 
-
         double x = it->x;
         double y = it->y;
         double z = it->z;

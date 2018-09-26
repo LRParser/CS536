@@ -4,21 +4,6 @@
  *  Created on: Sep 15, 2018
  *      Author: joe
  */
-#include <Inventor/SoOutput.h>
-#include <Inventor/SoDB.h>
-#include <Inventor/actions/SoWriteAction.h>
-#include <Inventor/nodes/SoCone.h>
-#include <Inventor/nodes/SoCube.h>
-#include <Inventor/nodes/SoIndexedLineSet.h>
-#include <Inventor/nodes/SoMaterial.h>
-#include <Inventor/nodes/SoSphere.h>
-#include <Inventor/nodes/SoSeparator.h>
-#include <Inventor/nodes/SoTransform.h>
-#include <Inventor/nodes/SoLightModel.h>
-#include <Inventor/nodes/SoMaterial.h>
-#include <Inventor/nodes/SoTranslation.h>
-#include <Inventor/fields/SoMFVec3f.h>
-#include <Inventor/nodes/SoCoordinate3.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,21 +14,9 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include "Node.h"
 
 using namespace std;
-
-// From OpenInventor library
-static char * buffer;
-static size_t buffer_size = 0;
-
-static void * buffer_realloc(void * bufptr, size_t size)
-{
-  buffer = (char *)realloc(bufptr, size);
-  buffer_size = size;
-  return buffer;
-}
-// End example from OpenInventor library docs
-
 
 bool debug = false;
 
@@ -176,9 +149,11 @@ main(int argc, char ** argv)
 
         if (i == 0) {
             tangent0 = point1;
+
         }
         else if(i == 1) {
             tangent1 = point1;
+
         }
         else {
             parsedPoints.push_back(point1);
@@ -201,7 +176,7 @@ main(int argc, char ** argv)
 
     int parsedLen = (int) parsedPoints.size();
 
-    for(int i = 0; i < parsedLen; i= i + 2) {
+    for(int i = 0; i < parsedLen; i++) {
 
         vector<point> points;
 
@@ -210,12 +185,9 @@ main(int argc, char ** argv)
             point pk = parsedPoints.at(i);
 
             point pkplus1 = parsedPoints.at(i+1);
-            point q0 = parsedPoints.at(i);
-            point q1 = parsedPoints.at(i+1);
 
             point t0;
             point t1;
-
 
             if (i == 0) {
                 t0 = tangent0;
@@ -240,67 +212,29 @@ main(int argc, char ** argv)
 
         }
 
-        curves.push_back(points);
-    }
-
-    /*
-    points.push_back(parsedPoints.at(0));
-    points.push_back(parsedPoints.at(0) + (tangent0*(1/3.0)));
-    points.push_back(parsedPoints.at(1) - (tangent1*(1/3.0)));
-    points.push_back(parsedPoints.at(1));
-    */
-
-    SoDB::init();
-
-    SoSeparator* root = new SoSeparator;
-    root->ref();
-
-    for (auto it = parsedPoints.begin(); it != parsedPoints.end(); it++) {
-
-        SoSeparator* cpSep = new SoSeparator();
-        root->addChild(cpSep);
-
-
-        double x = it->x;
-        double y = it->y;
-        double z = it->z;
-
-        if(debug) {
-            std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+        if (points.size() > 0) {
+            curves.push_back(points);
         }
-
-        SoTranslation* translation = new SoTranslation;
-        translation->translation.setValue(x,y,z);
-        cpSep->addChild(translation);
-        SoSphere* sphere = new SoSphere();
-        sphere->radius = radius;
-        cpSep->addChild(sphere);
     }
 
-    SoSeparator* interpolatedSeperator = new SoSeparator;
 
-    SoCoordinate3* interpolatedPoints = new SoCoordinate3();
-    SoIndexedLineSet* indexedLineSet = new SoIndexedLineSet;
+    Node* root = new Node("","","");
+
     vector<point> calcPoints;
 
     for (auto cIt = curves.begin(); cIt != curves.end(); cIt++) {
 
+        vector<point> points = *cIt;
 
-    vector<point> points = *cIt;
+        float u = 0.0;
+        int k = (int) points.size() - 1;
 
+        if(debug) {
+            cout << "Number of points is: " << k << endl;
+        }
 
-
-
-
-    float u = 0.0;
-    int k = (int) points.size() - 1;
-
-    if(debug) {
-        cout << "Number of points is: " << k << endl;
-    }
-
-
-    while(u <= 1.0) {
+        bool interpolatedEnd = false;
+        while(u <= 1.0 && !interpolatedEnd) {
 
         point currentPoint;
         currentPoint.x = 0.0;
@@ -322,44 +256,79 @@ main(int argc, char ** argv)
 
         calcPoints.push_back(currentPoint);
 
-        u += du;
+        if (u == 1.0) {
+            interpolatedEnd = true;
+        }
+        if (u + du > 1 && !interpolatedEnd) {
+            u = 1.0;
+        }
+        else {
+            u += du;
+        }
     }
 
     }
+
+
+    std::ostringstream pointVals;
+    std::ostringstream coordIndexSetVals;
+
+    pointVals << "point [" << std::endl;
+    coordIndexSetVals << "coordIndex [" << std::endl;
 
     i = 0;
     for(auto it = calcPoints.begin(); it != calcPoints.end(); it++) {
-        interpolatedPoints->point.set1Value(i,it->x,it->y,it->z);
-        indexedLineSet->coordIndex.set1Value(i,i);
+        pointVals << it->x << " " << it->y << " " << it->z << "," << std::endl;
+        coordIndexSetVals << i << ", ";
 
         i++;
     }
 
+    pointVals << "]" << std::endl;
+    coordIndexSetVals << -1 << ", " << std::endl;
+    coordIndexSetVals << "]" << std::endl;
 
+    Node* interpolatedSeperator = new Node("Separator {","","}");
 
-    indexedLineSet->coordIndex.set1Value(i,-1);
+    Node* interpolatedPoints = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
+    Node* indexedLineSet = new Node("IndexedLineSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
 
     interpolatedSeperator->addChild(interpolatedPoints);
     interpolatedSeperator->addChild(indexedLineSet);
     root->addChild(interpolatedSeperator);
 
+    // Plot the control points
+    for (auto it = parsedPoints.begin(); it != parsedPoints.end(); it++) {
 
-    // Inspired by OpenInventor library docs
-    SoOutput inventorOut;
-    buffer = (char *)malloc(1024);
-    buffer_size = 1024;
-    inventorOut.setBuffer(buffer, buffer_size, buffer_realloc);
+        Node* cpSep = new Node("Separator {","","}");
 
-    SoWriteAction writeAction(&inventorOut);
+        double x = it->x;
+        double y = it->y;
+        double z = it->z;
 
-    writeAction.apply(root);
+        if(debug) {
+            std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+        }
 
-    SbString contentsString(buffer);
-    free(buffer);
+        std::ostringstream transformStr;
+        transformStr << "translation " << x << " " << y << " " << z << std::endl;
+        Node* translation = new Node("Transform {",transformStr.str(),"}");
+        cpSep->addChild(translation);
 
-    cout << contentsString.getString() << endl;
+        std::ostringstream radiusStr;
+        radiusStr << "radius  " << radius << std::endl;
+        Node* sphere = new Node("Sphere {",radiusStr.str(),"}");
+        cpSep->addChild(sphere);
 
-    root->unref();
-   
+        root->addChild(cpSep);
+
+    }
+
+    string ivContent = root->getString();
+    ostringstream outputContent;
+    outputContent << "#Inventor V2.0 ascii" << endl << ivContent;
+
+    std::cout << outputContent.str() << std::endl;
+
     return 0;
 }
