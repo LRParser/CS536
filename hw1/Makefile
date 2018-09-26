@@ -2,7 +2,7 @@ CC=gcc
 CXX=g++ -std=c++11
 RM=rm -f
 
-SRCS=CG_hw1.cpp
+SRCS=CG_hw1.cpp Node.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 default: all
@@ -10,7 +10,7 @@ default: all
 all: CG_hw1
 
 CG_hw1: $(OBJS)
-	$(CXX) -I /usr/include/Inventor -o CG_hw1 $(OBJS) -lInventor
+	$(CXX) -o CG_hw1 $(OBJS)
 
 CG_hw1.o: CG_hw1.cpp
 

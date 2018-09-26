@@ -4,21 +4,7 @@
  *  Created on: Sep 15, 2018
  *      Author: joe
  */
-#include <Inventor/SoOutput.h>
-#include <Inventor/SoDB.h>
-#include <Inventor/actions/SoWriteAction.h>
-#include <Inventor/nodes/SoCone.h>
-#include <Inventor/nodes/SoCube.h>
-#include <Inventor/nodes/SoIndexedLineSet.h>
-#include <Inventor/nodes/SoMaterial.h>
-#include <Inventor/nodes/SoSphere.h>
-#include <Inventor/nodes/SoSeparator.h>
-#include <Inventor/nodes/SoTransform.h>
-#include <Inventor/nodes/SoLightModel.h>
-#include <Inventor/nodes/SoMaterial.h>
-#include <Inventor/nodes/SoTranslation.h>
-#include <Inventor/fields/SoMFVec3f.h>
-#include <Inventor/nodes/SoCoordinate3.h>
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,20 +15,10 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include "Node.h"
 
 using namespace std;
 
-// From OpenInventor library
-static char * buffer;
-static size_t buffer_size = 0;
-
-static void * buffer_realloc(void * bufptr, size_t size)
-{
-  buffer = (char *)realloc(bufptr, size);
-  buffer_size = size;
-  return buffer;
-}
-// End example from OpenInventor library docs
 
 
 bool debug = false;
@@ -174,39 +150,9 @@ main(int argc, char ** argv)
     }
 
 
-    SoDB::init();
+    Node* root = new Node("","","");
 
-    SoSeparator* root = new SoSeparator;
-    root->ref();
-
-
-    for (auto it = points.begin(); it != points.end(); it++) {
-
-        SoSeparator* cpSep = new SoSeparator();
-        root->addChild(cpSep);
-
-
-        double x = it->x;
-        double y = it->y;
-        double z = it->z;
-
-        if(debug) {
-            std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
-        }
-
-        SoTranslation* translation = new SoTranslation;
-        translation->translation.setValue(x,y,z);
-        cpSep->addChild(translation);
-        SoSphere* sphere = new SoSphere();
-        sphere->radius = radius;
-        cpSep->addChild(sphere);
-    }
-
-    SoSeparator* interpolatedSeperator = new SoSeparator;
-
-    SoCoordinate3* interpolatedPoints = new SoCoordinate3();
-    SoIndexedLineSet* indexedLineSet = new SoIndexedLineSet;
-
+    // Interpolate the curve
 
     float u = 0.0;
     int k = (int) points.size() - 1;
@@ -216,8 +162,8 @@ main(int argc, char ** argv)
     }
     vector<point> calcPoints;
 
-
-    while(u <= 1.0) {
+    bool interpolatedEnd = false;
+    while(u <= 1.0 && !interpolatedEnd) {
 
         point currentPoint;
         currentPoint.x = 0.0;
@@ -239,40 +185,77 @@ main(int argc, char ** argv)
 
         calcPoints.push_back(currentPoint);
 
-        u += du;
+        if (u == 1.0) {
+            interpolatedEnd = true;
+        }
+        if (u + du > 1 && !interpolatedEnd) {
+            u = 1.0;
+        }
+        else {
+            u += du;
+        }
+
     }
 
+    std::ostringstream pointVals;
+    std::ostringstream coordIndexSetVals;
 
+    pointVals << "point [" << std::endl;
+    coordIndexSetVals << "coordIndex [" << std::endl;
 
     int i = 0;
     for(auto it = calcPoints.begin(); it != calcPoints.end(); it++) {
-        interpolatedPoints->point.set1Value(i,it->x,it->y,it->z);
-        indexedLineSet->coordIndex.set1Value(i,i);
+        pointVals << it->x << " " << it->y << " " << it->z << "," << std::endl;
+        coordIndexSetVals << i << ", ";
 
         i++;
     }
-    indexedLineSet->coordIndex.set1Value(i,-1);
+
+    pointVals << "]" << std::endl;
+    coordIndexSetVals << -1 << ", " << std::endl;
+    coordIndexSetVals << "]" << std::endl;
+
+    Node* interpolatedSeperator = new Node("Separator {","","}");
+
+    Node* interpolatedPoints = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
+    Node* indexedLineSet = new Node("IndexedLineSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
 
     interpolatedSeperator->addChild(interpolatedPoints);
     interpolatedSeperator->addChild(indexedLineSet);
     root->addChild(interpolatedSeperator);
 
-    // Inspired by OpenInventor library docs
-    SoOutput inventorOut;
-    buffer = (char *)malloc(1024);
-    buffer_size = 1024;
-    inventorOut.setBuffer(buffer, buffer_size, buffer_realloc);
+    // Plot the control points
 
-    SoWriteAction writeAction(&inventorOut);
+    for (auto it = points.begin(); it != points.end(); it++) {
 
-    writeAction.apply(root);
+        Node* cpSep = new Node("Separator {","","}");
+        root->addChild(cpSep);
 
-    SbString contentsString(buffer);
-    free(buffer);
 
-    cout << contentsString.getString() << endl;
+        double x = it->x;
+        double y = it->y;
+        double z = it->z;
 
-    root->unref();
-   
+        if(debug) {
+            std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+        }
+
+        std::ostringstream transformStr;
+        transformStr << "translation " << x << " " << y << " " << z << std::endl;
+        Node* translation = new Node("Transform {",transformStr.str(),"}");
+        cpSep->addChild(translation);
+
+        std::ostringstream radiusStr;
+        radiusStr << "radius  " << radius << std::endl;
+        Node* sphere = new Node("Sphere {",radiusStr.str(),"}");
+        cpSep->addChild(sphere);
+    }
+
+    string ivContent = root->getString();
+    ostringstream outputContent;
+    outputContent << "#Inventor V2.0 ascii" << endl << ivContent;
+
+    std::cout << outputContent.str() << std::endl;
+
     return 0;
 }
