@@ -78,7 +78,7 @@ float fact(int k) {
 
 
 
-float kchoosei(int k, int i) {
+float binomial(int k, int i) {
     return fact(k) / (fact(i)*fact(k-i));
 }
 
@@ -88,10 +88,11 @@ main(int argc, char ** argv)
 {
 
     string fName;
-    float u = 11.0;
-    float v = 11.0;
+    float num_u = 11.0;
+    float num_v = 11.0;
     float radius = 0.1;
     bool shadeWithNormals = false;
+
 
     for(int i=0; i < argc; i++) {
         if (std::string(argv[i]) == "-f") {
@@ -106,7 +107,7 @@ main(int argc, char ** argv)
         else if (std::string(argv[i]) == "-u") {
 
             if (i + 1 < argc) {
-                u = std::stof(std::string(argv[i + 1]));
+                num_u = std::stof(std::string(argv[i + 1]));
             }
             else {
                 std::cerr << "Must provide num_u value after -u argument" << std::endl;
@@ -115,7 +116,7 @@ main(int argc, char ** argv)
         else if (std::string(argv[i]) == "-v") {
 
             if (i + 1 < argc) {
-                v = std::stof(std::string(argv[i + 1]));
+                num_v = std::stof(std::string(argv[i + 1]));
             }
             else {
                 std::cerr << "Must provide num_v value after -v argument" << std::endl;
@@ -139,8 +140,8 @@ main(int argc, char ** argv)
         }
     }
 
-    float du = 1/(u-1);
-    float dv = 1/(v-1);
+    float du = 1/(num_u-1);
+    float dv = 1/(num_v-1);
 
     if (fName.empty()) {
         fName = "patchPoints.txt";
@@ -153,10 +154,10 @@ main(int argc, char ** argv)
     if (input.fail()) {
         std::cerr << "Failed to open" << std::endl;
     }
-    point tangent0;
-    point tangent1;
-    vector<point> parsedPoints;
 
+    vector<vector<point>> k;
+
+    vector<point> currentJ;
     string currentLine;
     int i = 0;
     while(std::getline(input, currentLine)) {
@@ -164,23 +165,20 @@ main(int argc, char ** argv)
         if(debug) {
             std::cout << currentLine << std::endl;
         }
+
         point point1;
         std::istringstream ss(currentLine);
         ss >> point1.x >> point1.y >> point1.z;
 
-        if (i == 0) {
-            tangent0 = point1;
-
-        }
-        else if(i == 1) {
-            tangent1 = point1;
-
-        }
-        else {
-            parsedPoints.push_back(point1);
-        }
+        currentJ.push_back(point1);
 
         i = i + 1;
+
+        if (i == 3) {
+            k.push_back(currentJ);
+            currentJ = vector<point>();
+            i = 0;
+        }
 
         if (debug) {
             std::cout << "Parsed: " << point1.x << " " << point1.y << " " << point1.z << std::endl;
@@ -191,102 +189,68 @@ main(int argc, char ** argv)
         std::cout << "Done" << std::endl;
     }
 
-    // Convert the tangents and points (which are in Hermite form) into Bezier form
-    // We specify the tangents at the first and last input points
-    vector<vector<point>> curves;
-
-    int parsedLen = (int) parsedPoints.size();
-
-    for(int i = 0; i < parsedLen; i++) {
-
-        vector<point> points;
-
-        if (i < parsedLen - 1) {
-
-            point pk = parsedPoints.at(i);
-
-            point pkplus1 = parsedPoints.at(i+1);
-
-            point t0;
-            point t1;
-
-            if (i == 0) {
-                t0 = tangent0;
-            }
-            else {
-                point pkminus1 = parsedPoints.at(i-1);
-                t0 = (pkplus1-pkminus1)*0.5;
-            }
-
-            if (i + 2 == parsedLen) {
-                t1 = tangent1;
-            }
-            else {
-                point pkplus2 = parsedPoints.at(i+2);
-                t1 = (pkplus2-pk)*0.5;
-            }
-
-            points.push_back(pk);
-            points.push_back(pk + (t0*(1/3.0)));
-            points.push_back(pkplus1 - (t1*(1/3.0)));
-            points.push_back(pkplus1);
-
-        }
-
-        if (points.size() > 0) {
-            curves.push_back(points);
-        }
-    }
-
-
     Node* root = new Node("","","");
 
+    // Interpolate the curve
+
+    float u = 0.0;
+    float v = 0.0;
+
+    if(debug) {
+        cout << "Number of points is: " << k << endl;
+    }
     vector<point> calcPoints;
 
-    for (auto cIt = curves.begin(); cIt != curves.end(); cIt++) {
+    int n = 3;
+    int m = 3;
 
-        vector<point> points = *cIt;
+    bool interpolatedUEnd = false;
+    while(u <= 1.0 && !interpolatedUEnd) {
 
-        float u = 0.0;
-        int k = (int) points.size() - 1;
+        bool interpolatedVEnd = false;
+        while(v <= 1.0 && !interpolatedVEnd) {
 
-        if(debug) {
-            cout << "Number of points is: " << k << endl;
-        }
+            point currentPoint;
+            currentPoint.x = 0.0;
+            currentPoint.y = 0.0;
+            currentPoint.z = 0.0;
 
-        bool interpolatedEnd = false;
-        while(u <= 1.0 && !interpolatedEnd) {
+            for(int i = 0; i <= 3; i++) {
 
-        point currentPoint;
-        currentPoint.x = 0.0;
-        currentPoint.y = 0.0;
-        currentPoint.z = 0.0;
+                double factorU = binomial(n, i) * pow(u,i) * pow(1-u,n-i) ;
 
-        for(int i = 0; i <= k; i++) {
-            point controlPoint = points.at(i);
+                for(int j=0; j <= 3; j++) {
 
-            double factor = kchoosei(k, i) * pow(1-u,k-i) * pow(u,i);
-            if(debug) {
-                cout << "     i is: " << i << " factor is: " << factor << endl;
+                    double factorV = binomial(n, j) * pow(v,j) * pow(1-v,n-j);
+                    point controlPoint = k.at(j).at(i);
+                    currentPoint = currentPoint + (controlPoint * factorU * factorV);
+                }
             }
 
-            point calcPoint = pointMult(factor,controlPoint);
-            currentPoint = pointAdd(currentPoint,calcPoint);
+            calcPoints.push_back(currentPoint);
+
+            if (v == 1.0) {
+                interpolatedVEnd = true;
+            }
+            if (v + dv > 1 && !interpolatedVEnd) {
+                v = 1.0;
+            }
+            else {
+                v += dv;
+            }
 
         }
 
-        calcPoints.push_back(currentPoint);
 
         if (u == 1.0) {
-            interpolatedEnd = true;
+            interpolatedUEnd = true;
         }
-        if (u + du > 1 && !interpolatedEnd) {
+        if (u + du > 1 && !interpolatedUEnd) {
             u = 1.0;
         }
         else {
             u += du;
         }
-    }
 
     }
 
@@ -319,31 +283,41 @@ main(int argc, char ** argv)
     root->addChild(interpolatedSeperator);
 
     // Plot the control points
-    for (auto it = parsedPoints.begin(); it != parsedPoints.end(); it++) {
 
-        Node* cpSep = new Node("Separator {","","}");
+    for(int j = 0; j <= 3; j++) {
 
-        double x = it->x;
-        double y = it->y;
-        double z = it->z;
+        for(int i = 0; i <=3; i++) {
 
-        if(debug) {
-            std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+            Node* cpSep = new Node("Separator {","","}");
+
+            point point1 = k.at(j).at(i);
+            double x = point1.x;
+            double y = point1.y;
+            double z = point1.z;
+
+            if(debug) {
+                std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+            }
+
+            std::ostringstream transformStr;
+            transformStr << "translation " << x << " " << y << " " << z << std::endl;
+            Node* translation = new Node("Transform {",transformStr.str(),"}");
+            cpSep->addChild(translation);
+
+            std::ostringstream radiusStr;
+            radiusStr << "radius  " << radius << std::endl;
+            Node* sphere = new Node("Sphere {",radiusStr.str(),"}");
+            cpSep->addChild(sphere);
+
+            root->addChild(cpSep);
+
         }
 
-        std::ostringstream transformStr;
-        transformStr << "translation " << x << " " << y << " " << z << std::endl;
-        Node* translation = new Node("Transform {",transformStr.str(),"}");
-        cpSep->addChild(translation);
-
-        std::ostringstream radiusStr;
-        radiusStr << "radius  " << radius << std::endl;
-        Node* sphere = new Node("Sphere {",radiusStr.str(),"}");
-        cpSep->addChild(sphere);
-
-        root->addChild(cpSep);
-
     }
+
+
+
+
 
     string ivContent = root->getString();
     ostringstream outputContent;
