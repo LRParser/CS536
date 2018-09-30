@@ -88,8 +88,8 @@ main(int argc, char ** argv)
 {
 
     string fName;
-    float num_u = 11.0;
-    float num_v = 11.0;
+    int num_u = 11;
+    int num_v = 11;
     float radius = 0.1;
     bool shadeWithNormals = false;
 
@@ -107,7 +107,7 @@ main(int argc, char ** argv)
         else if (std::string(argv[i]) == "-u") {
 
             if (i + 1 < argc) {
-                num_u = std::stof(std::string(argv[i + 1]));
+                num_u = std::stoi(std::string(argv[i + 1]));
             }
             else {
                 std::cerr << "Must provide num_u value after -u argument" << std::endl;
@@ -116,7 +116,7 @@ main(int argc, char ** argv)
         else if (std::string(argv[i]) == "-v") {
 
             if (i + 1 < argc) {
-                num_v = std::stof(std::string(argv[i + 1]));
+                num_v = std::stoi(std::string(argv[i + 1]));
             }
             else {
                 std::cerr << "Must provide num_v value after -v argument" << std::endl;
@@ -140,8 +140,8 @@ main(int argc, char ** argv)
         }
     }
 
-    float du = 1/(num_u-1);
-    float dv = 1/(num_v-1);
+    double du = 1.0/(float)(num_u-1);
+    double dv = 1.0/(float)(num_v-1);
 
     if (fName.empty()) {
         fName = "patchPoints.txt";
@@ -155,11 +155,13 @@ main(int argc, char ** argv)
         std::cerr << "Failed to open" << std::endl;
     }
 
-    vector<vector<point>> k;
+    point* k = new point[4][4];
+
 
     vector<point> currentJ;
     string currentLine;
     int i = 0;
+    int j = 0;
     while(std::getline(input, currentLine)) {
 
         if(debug) {
@@ -170,14 +172,13 @@ main(int argc, char ** argv)
         std::istringstream ss(currentLine);
         ss >> point1.x >> point1.y >> point1.z;
 
-        currentJ.push_back(point1);
+        k[i][j] = point1;
 
         i = i + 1;
 
         if (i == 3) {
-            k.push_back(currentJ);
-            currentJ = vector<point>();
             i = 0;
+            j = j + 1;
         }
 
         if (debug) {
@@ -193,8 +194,6 @@ main(int argc, char ** argv)
 
     // Interpolate the curve
 
-    float u = 0.0;
-    float v = 0.0;
 
     if(debug) {
         cout << "Number of points is: " << k << endl;
@@ -205,7 +204,10 @@ main(int argc, char ** argv)
     int m = 3;
 
     bool interpolatedUEnd = false;
-    while(u <= 1.0 && !interpolatedUEnd) {
+
+    for (int u = 1; u < num_u; u++) {
+
+        float uParam = (float)u/float(num_u);
 
         bool interpolatedVEnd = false;
         while(v <= 1.0 && !interpolatedVEnd) {
