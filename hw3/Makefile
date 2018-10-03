@@ -18,4 +18,4 @@ clean:
 	$(RM) $(OBJS) CG_hw3
 
 run: all
-	./CG_hw3 -f patchPoints.txt -u 0.0303 -r 0.1 > out.iv && ivview out.iv
+	./CG_hw3 -f patchPoints.txt -u 9 -v 9 -r 0.1 -F > out.iv && ivview out.iv

@@ -140,6 +140,12 @@ main(int argc, char ** argv)
         }
     }
 
+    if(debug) {
+        cout << "num_u is: " << num_u;
+        cout << "num_v is: " << num_u;
+
+    }
+
     double du = 1.0/(float)(num_u-1);
     double dv = 1.0/(float)(num_v-1);
 
@@ -155,10 +161,21 @@ main(int argc, char ** argv)
         std::cerr << "Failed to open" << std::endl;
     }
 
-    point* k = new point[4][4];
+    vector<vector<point>> k;
+    // Allocate space for 16 control points
+    for(int i = 0; i < 4; i++) {
+
+        vector<point> iVec;
+
+        for(int j = 0; j < 4; j++) {
+            point p1;
+            iVec.push_back(p1);
+        }
+
+        k.push_back(iVec);
+    }
 
 
-    vector<point> currentJ;
     string currentLine;
     int i = 0;
     int j = 0;
@@ -172,14 +189,21 @@ main(int argc, char ** argv)
         std::istringstream ss(currentLine);
         ss >> point1.x >> point1.y >> point1.z;
 
+        if(debug) {
+            cout << "Set at index: " << i << " and " << j << endl;
+        }
         k[i][j] = point1;
-
-        i = i + 1;
 
         if (i == 3) {
             i = 0;
             j = j + 1;
+            continue;
         }
+        else {
+            i = i + 1;
+        }
+
+
 
         if (debug) {
             std::cout << "Parsed: " << point1.x << " " << point1.y << " " << point1.z << std::endl;
@@ -194,68 +218,68 @@ main(int argc, char ** argv)
 
     // Interpolate the curve
 
+    // Ensure we have num_u * num_v points in interpolatedPoints
+    vector<vector<point>> interpolatedPoints;
+    for (int u = 0; u < num_u; u++) {
+
+        vector<point> uVec;
+
+        for(int v = 0; v < num_v; v++) {
+            point p;
+            uVec.push_back(p);
+        }
+
+        interpolatedPoints.push_back(uVec);
+    }
 
     if(debug) {
-        cout << "Number of points is: " << k << endl;
+        cout << "Created placeholder for points" << endl;
     }
-    vector<point> calcPoints;
+
 
     int n = 3;
     int m = 3;
 
-    bool interpolatedUEnd = false;
-
-    for (int u = 1; u < num_u; u++) {
+    for (int u = 0; u < num_u; u++) {
 
         float uParam = (float)u/float(num_u);
 
-        bool interpolatedVEnd = false;
-        while(v <= 1.0 && !interpolatedVEnd) {
+        for(int v = 0; v < num_v; v++) {
+
+            float vParam = float(v)/float(num_v);
 
             point currentPoint;
             currentPoint.x = 0.0;
             currentPoint.y = 0.0;
             currentPoint.z = 0.0;
 
-            for(int i = 0; i <= 3; i++) {
+            for(int i = 0; i <= n; i++) {
 
-                double factorU = binomial(n, i) * pow(u,i) * pow(1-u,n-i) ;
+                double factorU = binomial(n, i) * pow(uParam,i) * pow(1-uParam,n-i) ;
 
-                for(int j=0; j <= 3; j++) {
+                for(int j=0; j <= m; j++) {
 
-                    double factorV = binomial(n, j) * pow(v,j) * pow(1-v,n-j);
-                    point controlPoint = k.at(j).at(i);
+                    double factorV = binomial(m, j) * pow(vParam,j) * pow(1-vParam,m-j);
+                    if(debug) {
+                        cout << " Get control point at: " << j << "," << i << endl;
+                    }
+                    point controlPoint = k[j][i];
                     currentPoint = currentPoint + (controlPoint * factorU * factorV);
                 }
             }
 
-            calcPoints.push_back(currentPoint);
-
-            if (v == 1.0) {
-                interpolatedVEnd = true;
-            }
-            if (v + dv > 1 && !interpolatedVEnd) {
-                v = 1.0;
-            }
-            else {
-                v += dv;
+            if(debug) {
+                cout << " Set interpolated point at: " << u << "," << v << endl;
             }
 
-        }
-
-
-        if (u == 1.0) {
-            interpolatedUEnd = true;
-        }
-        if (u + du > 1 && !interpolatedUEnd) {
-            u = 1.0;
-        }
-        else {
-            u += du;
+            interpolatedPoints[u][v] = currentPoint;
         }
 
     }
 
+    if(debug) {
+        cout << "Writing to OpenInventor format" << endl;
+    }
 
     std::ostringstream pointVals;
     std::ostringstream coordIndexSetVals;
@@ -263,24 +287,66 @@ main(int argc, char ** argv)
     pointVals << "point [" << std::endl;
     coordIndexSetVals << "coordIndex [" << std::endl;
 
-    i = 0;
-    for(auto it = calcPoints.begin(); it != calcPoints.end(); it++) {
-        pointVals << it->x << " " << it->y << " " << it->z << "," << std::endl;
-        coordIndexSetVals << i << ", ";
 
-        i++;
+    int vertexIndex = 0;
+    for(int i = 0; i < num_u - 1; i++) {
+        for(int j = 0; j < num_v - 1; j++) {
+            point vertex1 =  interpolatedPoints[i][j]; // 1
+
+            point vertex2 = interpolatedPoints[i+1][j]; // 2
+            point vertex3 = interpolatedPoints[i][j+1]; // 3
+
+            point vertex4 = interpolatedPoints[i+1][j]; // 4
+            point vertex5 = interpolatedPoints[i+1][j+1]; // 5
+            point vertex6 = interpolatedPoints[i][j+1]; // 6
+
+            pointVals << vertex1.x << " " << vertex1.y << " " << vertex1.z << "," << std::endl;
+            coordIndexSetVals << vertexIndex << ", ";
+            vertexIndex++;
+
+            pointVals << vertex2.x << " " << vertex2.y << " " << vertex2.z << "," << std::endl;
+            coordIndexSetVals << vertexIndex << ", ";
+            vertexIndex++;
+
+            pointVals << vertex3.x << " " << vertex3.y << " " << vertex3.z << "," << std::endl;
+            coordIndexSetVals << vertexIndex << ", ";
+            vertexIndex++;
+
+            coordIndexSetVals << -1 << ", " << endl;
+
+            pointVals << vertex4.x << " " << vertex4.y << " " << vertex4.z << "," << std::endl;
+            coordIndexSetVals << vertexIndex << ", ";
+            vertexIndex++;
+
+            pointVals << vertex5.x << " " << vertex5.y << " " << vertex5.z << "," << std::endl;
+            coordIndexSetVals << vertexIndex << ", ";
+            vertexIndex++;
+
+            pointVals << vertex6.x << " " << vertex6.y << " " << vertex6.z << "," << std::endl;
+            coordIndexSetVals << vertexIndex << ", ";
+            vertexIndex++;
+
+            coordIndexSetVals << -1 << ", " << endl;
+
+
+        }
     }
 
+    if(debug) {
+        cout << "Serialized to OI format" << endl;
+    }
+
+    i = 0;
+
     pointVals << "]" << std::endl;
-    coordIndexSetVals << -1 << ", " << std::endl;
     coordIndexSetVals << "]" << std::endl;
 
     Node* interpolatedSeperator = new Node("Separator {","","}");
 
-    Node* interpolatedPoints = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
+    Node* interpolatedPointsNode = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
     Node* indexedLineSet = new Node("IndexedLineSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
 
-    interpolatedSeperator->addChild(interpolatedPoints);
+    interpolatedSeperator->addChild(interpolatedPointsNode);
     interpolatedSeperator->addChild(indexedLineSet);
     root->addChild(interpolatedSeperator);
 
