@@ -1,0 +1,53 @@
+#Inventor V2.0 ascii
+
+Separator {
+Coordinate3 {
+point [
+0 0 0,
+0.382842 0 0.3276,
+0.805536 0 0.5904,
+1.25933 0 0.7884,
+1.73549 0 0.9216,
+2.22525 0 0.99,
+2.71987 0 0.9936,
+3.21061 0 0.9324,
+3.6887 0 0.8064,
+4.14542 0 0.6156,
+4.572 0 0.36,
+4.9597 0 0.0395995,
+5 0 0,
+]
+}
+
+IndexedLineSet {
+coordIndex [
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, -1, 
+]
+}
+
+}
+
+Separator {
+Transform {
+translation 0 0 0
+}
+
+Sphere {
+radius  0.1
+}
+
+}
+
+Separator {
+Transform {
+translation 5 0 0
+}
+
+Sphere {
+radius  0.1
+}
+
+}
+
+
+

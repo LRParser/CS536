@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++11 -g   CMakeFiles/CG_hw2.dir/CG_hw2.cpp.o CMakeFiles/CG_hw2.dir/Node.cpp.o  -o CG_hw2 

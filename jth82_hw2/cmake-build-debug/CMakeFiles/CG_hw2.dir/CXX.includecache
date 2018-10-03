@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/joe/CS536/hw2/CG_hw2.cpp
+stdlib.h
+-
+stdio.h
+-
+math.h
+-
+iostream
+-
+string
+-
+fstream
+-
+sstream
+-
+vector
+-
+map
+-
+Node.h
+/home/joe/CS536/hw2/Node.h
+
+/home/joe/CS536/hw2/Node.h
+string
+-
+vector
+-
+sstream
+-
+stdlib.h
+-
+stdio.h
+-
+iostream
+-
+
