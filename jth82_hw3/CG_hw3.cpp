@@ -19,8 +19,9 @@
 using namespace std;
 
 bool debug = false;
-
-struct point {
+bool memoize = false;
+class point {
+public:
     double x;
     double y;
     double z;
@@ -33,11 +34,17 @@ struct point {
         return {x-a.x,y-a.y,z-a.z};
     }
 
+
+
     point operator*(double a) {
         return {a*x,a*y,a*z};
     }
 
 };
+
+bool operator<(point a, point b) {
+return std::make_tuple(a.x,a.y,a.z) <  std::make_tuple(b.x, b.y, b.z);
+}
 
 point pointMult(double factor, point srcPt) {
     point newPoint;
@@ -55,33 +62,73 @@ point pointAdd(point point1, point point2) {
     return point3;
 }
 
-map<int,float> factorialMap;
+map<int,double> factorialMap;
+map<point,int> vertexIndexMapping;
 
 
-float fact(int k) {
+double fact(int k) {
     if (k == 0) {
         return 1;
     }
-
-    // Memoize for performance
-    auto iter = factorialMap.find(k);
-    if (iter != factorialMap.end()) {
-       return iter->second;
-    }
     else {
-        float retVal = k * fact(k-1);
-        factorialMap.insert(std::pair<int,int>(k,retVal));
-        return retVal;
+
+        if(memoize) {
+            // Memoize for performance
+            auto iter = factorialMap.find(k);
+            if (iter != factorialMap.end()) {
+                return iter->second;
+            }
+            else {
+                double retVal = k * fact(k-1);
+                factorialMap.insert(std::pair<int,double>(k,retVal));
+                return retVal;
+            }
+        }
+        else {
+            double retVal = k * fact(k-1);
+            return retVal;
+        }
+
+
     }
+
+
 
 }
 
+double magnitude(point p) {
+    return sqrt(p.x*p.x+p.y*p.y+p.z*p.z);
+}
 
+double dot(point p, point v) {
+    return p.x*v.x+p.y*v.y+p.z*v.z;
+}
 
-float binomial(int k, int i) {
+double cosineoftheta(point u, point v) {
+    return dot(u,v)/(magnitude(u)*magnitude(v));
+}
+
+double angleoftheta(point u, point v) {
+    return acos(cosineoftheta(u,v));
+}
+
+point calculateNormal(point point1, point point2, point point3) {
+
+    point vec1 = point2 - point1;
+    point vec2 = point3 - point2;
+
+    double multiplier = magnitude(vec1) * magnitude(vec2) * sin(angleoftheta(vec1,vec2));
+
+    point p;
+    p.x = vec1.x*vec2.x;
+    p.y = vec1.y*vec2.y;
+    p.z = vec1.z*vec2.z;
+    return p*multiplier;
+}
+
+double binomial(int k, int i) {
     return fact(k) / (fact(i)*fact(k-i));
 }
-
 
 int
 main(int argc, char ** argv)
@@ -138,6 +185,9 @@ main(int argc, char ** argv)
         else if (std::string(argv[i]) == "-S") {
             shadeWithNormals = true;
         }
+        else if (std::string(argv[i]) == "-d") {
+            debug = true;
+        }
     }
 
     if(debug) {
@@ -145,9 +195,6 @@ main(int argc, char ** argv)
         cout << "num_v is: " << num_u;
 
     }
-
-    double du = 1.0/(float)(num_u-1);
-    double dv = 1.0/(float)(num_v-1);
 
     if (fName.empty()) {
         fName = "patchPoints.txt";
@@ -197,7 +244,6 @@ main(int argc, char ** argv)
         if (i == 3) {
             i = 0;
             j = j + 1;
-            continue;
         }
         else {
             i = i + 1;
@@ -218,35 +264,64 @@ main(int argc, char ** argv)
 
     // Interpolate the curve
 
-    // Ensure we have num_u * num_v points in interpolatedPoints
-    vector<vector<point>> interpolatedPoints;
-    for (int u = 0; u < num_u; u++) {
+    // We always interpolate at 0 and 1
+    double du = 1 / (double(num_u) - 1);
+    double dv = 1 / (double(num_v) - 1);
 
+    if(debug) {
+        cout << "du is: " << du << " dv is: " << dv << endl;
+    }
+
+    double u = 0.0;
+    double v = 0.0;
+    int numPts = 0;
+    vector<vector<point>> interpolatedPoints;
+
+    while(u <= 1) {
         vector<point> uVec;
 
-        for(int v = 0; v < num_v; v++) {
+        while(v <= 1) {
             point p;
             uVec.push_back(p);
+            v += dv;
+            numPts++;
         }
-
         interpolatedPoints.push_back(uVec);
+        v = 0.0;
+        u += du;
     }
 
     if(debug) {
-        cout << "Created placeholder for points" << endl;
+        cout << "Created placeholder for " << numPts << " points" << endl;
     }
+
+    std::ostringstream pointVals;
+    std::ostringstream coordIndexSetVals;
+
+    pointVals << "point [" << std::endl;
 
 
     int n = 3;
     int m = 3;
 
-    for (int u = 0; u < num_u; u++) {
 
-        float uParam = (float)u/float(num_u);
 
-        for(int v = 0; v < num_v; v++) {
 
-            float vParam = float(v)/float(num_v);
+    int uIdx = 0;
+    int vIdx = 0;
+    u = 0.0;
+    v = 0.0;
+
+    while(u <= 1) {
+
+        while(v <= 1) {
+
+            if(debug) {
+            }
+            if(debug) {
+                cout << "u is: " << u << " ";
+                cout << "v is: " << v << " ";
+            }
 
             point currentPoint;
             currentPoint.x = 0.0;
@@ -255,92 +330,106 @@ main(int argc, char ** argv)
 
             for(int i = 0; i <= n; i++) {
 
-                double factorU = binomial(n, i) * pow(uParam,i) * pow(1-uParam,n-i) ;
+                double factorU = binomial(n, i) * pow(u,i) * pow(1-u,n-i) ;
 
                 for(int j=0; j <= m; j++) {
 
-                    double factorV = binomial(m, j) * pow(vParam,j) * pow(1-vParam,m-j);
+                    double factorV = binomial(m, j) * pow(v,j) * pow(1-v,m-j);
                     if(debug) {
-                        cout << " Get control point at: " << j << "," << i << endl;
+                        // cout << " Get control point at: " << j << "," << i << endl;
                     }
-                    point controlPoint = k[j][i];
+                    point controlPoint = k[i][j]; // TBD
                     currentPoint = currentPoint + (controlPoint * factorU * factorV);
                 }
             }
 
             if(debug) {
-                cout << " Set interpolated point at: " << u << "," << v << endl;
+                cout << " Set interpolated point at: " << uIdx << "," << vIdx << " to x: " << currentPoint.x << ", y: " << currentPoint.y << ", z: " << currentPoint.z << endl;
             }
 
-            interpolatedPoints[u][v] = currentPoint;
+
+            interpolatedPoints[uIdx][vIdx] = currentPoint;
+
+            vIdx++;
+            v = v+dv;
         }
+
+        v = 0.0;
+        vIdx = 0;
+        uIdx++;
+        u=u+du;
 
     }
 
     if(debug) {
+        cout << "numPts is" << numPts << endl;
         cout << "Writing to OpenInventor format" << endl;
     }
 
-    std::ostringstream pointVals;
-    std::ostringstream coordIndexSetVals;
 
-    pointVals << "point [" << std::endl;
     coordIndexSetVals << "coordIndex [" << std::endl;
 
 
     int vertexIndex = 0;
-    for(int i = 0; i < num_u - 1; i++) {
-        for(int j = 0; j < num_v - 1; j++) {
-            point vertex1 =  interpolatedPoints[i][j]; // 1, or 0,0
-            point vertex2 = interpolatedPoints[i+1][j]; // 2, 1,0
-            point vertex3 = interpolatedPoints[i][j+1]; // 3, 0,1
+    vector<point> normals;
 
-            point vertex4 = interpolatedPoints[i+1][j]; // 4, 1,0
-            point vertex5 = interpolatedPoints[i+1][j+1]; // 5, 1,1
-            point vertex6 = interpolatedPoints[i][j+1]; // 6, 0,1
+    numPts = 0;
+    for(int i = 0; i < num_u; i++) {
+        for(int j = 0; j < num_v; j++) {
 
-            pointVals << vertex1.x << " " << vertex1.y << " " << vertex1.z << "," << std::endl;
-            coordIndexSetVals << vertexIndex << ", ";
-            vertexIndex++;
+            point currentPoint =  interpolatedPoints[j][i]; // 0, or 0,0; 1
+            pointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
+            vertexIndexMapping.insert(std::pair<point,int>(currentPoint,numPts));
 
-            pointVals << vertex2.x << " " << vertex2.y << " " << vertex2.z << "," << std::endl;
-            coordIndexSetVals << vertexIndex << ", ";
-            vertexIndex++;
-
-            pointVals << vertex3.x << " " << vertex3.y << " " << vertex3.z << "," << std::endl;
-            coordIndexSetVals << vertexIndex << ", ";
-            vertexIndex++;
-
-            coordIndexSetVals << -1 << ", " << endl;
-
-            pointVals << vertex4.x << " " << vertex4.y << " " << vertex4.z << "," << std::endl;
-            coordIndexSetVals << vertexIndex << ", ";
-            vertexIndex++;
-
-            pointVals << vertex5.x << " " << vertex5.y << " " << vertex5.z << "," << std::endl;
-            coordIndexSetVals << vertexIndex << ", ";
-            vertexIndex++;
-
-            pointVals << vertex6.x << " " << vertex6.y << " " << vertex6.z << "," << std::endl;
-            coordIndexSetVals << vertexIndex << ", ";
-            vertexIndex++;
-
-            coordIndexSetVals << -1 << ", " << endl;
-
-
+            numPts++;
         }
     }
 
-    if(debug) {
-        cout << "Serialized to OI format" << endl;
+    for(int i = 0; i < num_u - 1; i++) {
+        for(int j = 0; j < num_v -1; j++) {
+
+            // Four distinct points become a patch (two tesselated triangles)
+
+            point vertex0 =  interpolatedPoints[i][j]; // 0
+            int index0 = vertexIndexMapping.at(vertex0);
+
+            point vertex1 = interpolatedPoints[i+1][j]; // 1
+            int index1 = vertexIndexMapping.at(vertex1);
+
+            point vertex2 = interpolatedPoints[i][j+1]; // 2
+            int index2 = vertexIndexMapping.at(vertex2);
+
+            point vertex3 = interpolatedPoints[i+1][j+1]; // 3
+            int index3 = vertexIndexMapping.at(vertex3);
+
+            if(debug) {
+                cout << "Indices at: " << index0 << ", " << index1 << ", " << index2 << ", " << index3 << endl;
+            }
+
+            coordIndexSetVals << index0 << ", ";
+            coordIndexSetVals << index2 << ", ";
+            coordIndexSetVals << index3 << ", ";
+            coordIndexSetVals << -1 << ", " << endl;
+
+            coordIndexSetVals << index0 << ", ";
+            coordIndexSetVals << index3 << ", ";
+            coordIndexSetVals << index1 << ", ";
+            coordIndexSetVals << -1 << ", " << endl;
+
+            numPts++;
+        }
     }
 
-    i = 0;
+
+    if(debug) {
+        cout << "Serializing to OI format" << endl;
+    }
+
 
     pointVals << "]" << std::endl;
     coordIndexSetVals << "]" << std::endl;
 
-    Node* shapeHints = new Node("ShapeHints {","vertexOrdering        COUNTERCLOCKWISE","}");
+    Node* shapeHints = new Node("ShapeHints {","vertexOrdering        COUNTERCLOCKWISE\n","}");
     root->addChild(shapeHints);
 
     Node* interpolatedSeperator = new Node("Separator {","","}");
@@ -349,14 +438,39 @@ main(int argc, char ** argv)
     Node* indexedFaceSet = new Node("IndexedFaceSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
 
     interpolatedSeperator->addChild(interpolatedPointsNode);
+
+    if(shadeWithNormals) {
+        // Calculate vertex normals as we are doing smooth shading.
+        Node* normalBindingNode = new Node("NormalBinding {","value        PER_VERTEX_INDEXED","}");
+        interpolatedSeperator->addChild(normalBindingNode);
+
+        std::ostringstream vectorVals;
+
+        vectorVals << "vector [" << std::endl;
+
+        for(auto cit= normals.begin(); cit != normals.end(); cit++) {
+            point p = *cit;
+            vectorVals << p.x << " " << p.y << " " << p.z << "," << std::endl;
+        }
+
+        vectorVals << "]" << std::endl;
+
+        Node* normalVectorsNode = new Node("Normal {",vectorVals.str(),"}");
+        interpolatedSeperator->addChild(normalVectorsNode);
+
+
+    }
+
     interpolatedSeperator->addChild(indexedFaceSet);
     root->addChild(interpolatedSeperator);
 
+
+
     // Plot the control points
 
-    for(int j = 0; j <= 3; j++) {
+    for(int i = 0; i <= 3; i++) {
 
-        for(int i = 0; i <=3; i++) {
+        for(int j = 0; j <=3; j++) {
 
             Node* cpSep = new Node("Separator {","","}");
 
@@ -366,7 +480,7 @@ main(int argc, char ** argv)
             double z = point1.z;
 
             if(debug) {
-                std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+                // std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
             }
 
             std::ostringstream transformStr;
@@ -389,11 +503,14 @@ main(int argc, char ** argv)
 
 
 
-    string ivContent = root->getString();
-    ostringstream outputContent;
-    outputContent << "#Inventor V2.0 ascii" << endl << ivContent;
+    if(!debug) {
+        string ivContent = root->getString();
+        ostringstream outputContent;
+        outputContent << "#Inventor V2.0 ascii" << endl << ivContent;
 
-    std::cout << outputContent.str() << std::endl;
+        std::cout << outputContent.str() << std::endl;
+    }
+
 
     return 0;
 }
