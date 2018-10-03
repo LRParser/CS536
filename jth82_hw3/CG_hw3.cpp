@@ -291,14 +291,13 @@ main(int argc, char ** argv)
     int vertexIndex = 0;
     for(int i = 0; i < num_u - 1; i++) {
         for(int j = 0; j < num_v - 1; j++) {
-            point vertex1 =  interpolatedPoints[i][j]; // 1
+            point vertex1 =  interpolatedPoints[i][j]; // 1, or 0,0
+            point vertex2 = interpolatedPoints[i+1][j]; // 2, 1,0
+            point vertex3 = interpolatedPoints[i][j+1]; // 3, 0,1
 
-            point vertex2 = interpolatedPoints[i+1][j]; // 2
-            point vertex3 = interpolatedPoints[i][j+1]; // 3
-
-            point vertex4 = interpolatedPoints[i+1][j]; // 4
-            point vertex5 = interpolatedPoints[i+1][j+1]; // 5
-            point vertex6 = interpolatedPoints[i][j+1]; // 6
+            point vertex4 = interpolatedPoints[i+1][j]; // 4, 1,0
+            point vertex5 = interpolatedPoints[i+1][j+1]; // 5, 1,1
+            point vertex6 = interpolatedPoints[i][j+1]; // 6, 0,1
 
             pointVals << vertex1.x << " " << vertex1.y << " " << vertex1.z << "," << std::endl;
             coordIndexSetVals << vertexIndex << ", ";
@@ -341,13 +340,16 @@ main(int argc, char ** argv)
     pointVals << "]" << std::endl;
     coordIndexSetVals << "]" << std::endl;
 
+    Node* shapeHints = new Node("ShapeHints {","vertexOrdering        COUNTERCLOCKWISE","}");
+    root->addChild(shapeHints);
+
     Node* interpolatedSeperator = new Node("Separator {","","}");
 
     Node* interpolatedPointsNode = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
-    Node* indexedLineSet = new Node("IndexedLineSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
+    Node* indexedFaceSet = new Node("IndexedFaceSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
 
     interpolatedSeperator->addChild(interpolatedPointsNode);
-    interpolatedSeperator->addChild(indexedLineSet);
+    interpolatedSeperator->addChild(indexedFaceSet);
     root->addChild(interpolatedSeperator);
 
     // Plot the control points
