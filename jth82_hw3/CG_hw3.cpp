@@ -40,6 +40,11 @@ public:
         return {a*x,a*y,a*z};
     }
 
+    point operator/(double a) {
+        return {x/a,y/a,z/a};
+    }
+
+
 };
 
 bool operator<(point a, point b) {
@@ -64,6 +69,7 @@ point pointAdd(point point1, point point2) {
 
 map<int,double> factorialMap;
 map<point,int> vertexIndexMapping;
+map<point,point> vertexNormalMapping;
 
 
 double fact(int k) {
@@ -114,16 +120,35 @@ double angleoftheta(point u, point v) {
 
 point calculateNormal(point point1, point point2, point point3) {
 
-    point vec1 = point2 - point1;
-    point vec2 = point3 - point2;
+    point vec1 = point1 - point2;
+    point vec2 = point1 - point3;
 
-    double multiplier = magnitude(vec1) * magnitude(vec2) * sin(angleoftheta(vec1,vec2));
+    if(debug) {
+        cerr << "Cross of: (" << vec1.x << ", " << vec1.y << ", " << vec1.z << ")" << endl;
+        cerr << "  and of: (" << vec2.x << ", " << vec2.y << ", " << vec2.z << ")" <<  endl;
+    }
 
-    point p;
-    p.x = vec1.x*vec2.x;
-    p.y = vec1.y*vec2.y;
-    p.z = vec1.z*vec2.z;
-    return p*multiplier;
+    point cross;
+    cross.z = (vec1.x*vec2.y)-(vec2.x*vec1.y);
+    cross.y = (vec1.z*vec2.x)-(vec2.z*vec1.x);
+    cross.x = (vec1.y*vec2.z)-(vec2.y*vec1.z);
+
+    if(debug) {
+        cerr << "Is      : " << cross.x << ", " << cross.y << ", " << cross.z << endl;
+    }
+
+    // Now we need to normalize so it becomes a unit vector
+    point normalizePt;
+    normalizePt.x = pow(cross.x,2);
+    normalizePt.y = pow(cross.y,2);
+    normalizePt.z = pow(cross.z,2);
+    double pointSums = sqrt(normalizePt.x + normalizePt.y + normalizePt.z);
+
+    cross.x = cross.x / pointSums;
+    cross.y = cross.y / pointSums;
+    cross.z = cross.z / pointSums;
+
+    return cross;
 }
 
 double binomial(int k, int i) {
@@ -372,6 +397,7 @@ main(int argc, char ** argv)
 
     int vertexIndex = 0;
     vector<point> normals;
+    vector<point> vertices;
 
     numPts = 0;
     for(int i = 0; i < num_u; i++) {
@@ -380,6 +406,7 @@ main(int argc, char ** argv)
             point currentPoint =  interpolatedPoints[j][i]; // 0, or 0,0; 1
             pointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
             vertexIndexMapping.insert(std::pair<point,int>(currentPoint,numPts));
+            vertices.push_back(currentPoint);
 
             numPts++;
         }
@@ -389,7 +416,6 @@ main(int argc, char ** argv)
         for(int j = 0; j < num_v -1; j++) {
 
             // Four distinct points become a patch (two tesselated triangles)
-
             point vertex0 =  interpolatedPoints[i][j]; // 0
             int index0 = vertexIndexMapping.at(vertex0);
 
@@ -406,14 +432,19 @@ main(int argc, char ** argv)
                 cout << "Indices at: " << index0 << ", " << index1 << ", " << index2 << ", " << index3 << endl;
             }
 
-            coordIndexSetVals << index0 << ", ";
-            coordIndexSetVals << index2 << ", ";
-            coordIndexSetVals << index3 << ", ";
-            coordIndexSetVals << -1 << ", " << endl;
+            vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
+            vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
+            vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
+            vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
 
             coordIndexSetVals << index0 << ", ";
-            coordIndexSetVals << index3 << ", ";
             coordIndexSetVals << index1 << ", ";
+            coordIndexSetVals << index2 << ", ";
+            coordIndexSetVals << -1 << ", " << endl;
+
+            coordIndexSetVals << index1 << ", ";
+            coordIndexSetVals << index3 << ", ";
+            coordIndexSetVals << index2 << ", ";
             coordIndexSetVals << -1 << ", " << endl;
 
             numPts++;
@@ -435,6 +466,7 @@ main(int argc, char ** argv)
     Node* interpolatedSeperator = new Node("Separator {","","}");
 
     Node* interpolatedPointsNode = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
+
     Node* indexedFaceSet = new Node("IndexedFaceSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
 
     interpolatedSeperator->addChild(interpolatedPointsNode);
@@ -444,18 +476,19 @@ main(int argc, char ** argv)
         Node* normalBindingNode = new Node("NormalBinding {","value        PER_VERTEX_INDEXED","}");
         interpolatedSeperator->addChild(normalBindingNode);
 
-        std::ostringstream vectorVals;
+        std::ostringstream normalVectorVals;
 
-        vectorVals << "vector [" << std::endl;
+        normalVectorVals << "vector [" << std::endl;
 
-        for(auto cit= normals.begin(); cit != normals.end(); cit++) {
+        for(auto cit= vertices.begin(); cit != vertices.end(); cit++) {
             point p = *cit;
-            vectorVals << p.x << " " << p.y << " " << p.z << "," << std::endl;
+            point n = vertexNormalMapping[p];
+            normalVectorVals << n.x << " " << n.y << " " << n.z << "," << std::endl;
         }
 
-        vectorVals << "]" << std::endl;
+        normalVectorVals << "]" << std::endl;
 
-        Node* normalVectorsNode = new Node("Normal {",vectorVals.str(),"}");
+        Node* normalVectorsNode = new Node("Normal {",normalVectorVals.str(),"}");
         interpolatedSeperator->addChild(normalVectorsNode);
 
 
