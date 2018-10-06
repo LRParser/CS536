@@ -155,28 +155,25 @@ double binomial(int k, int i) {
     return fact(k) / (fact(i)*fact(k-i));
 }
 
+double auxC(double w, double m)
+
 int
 main(int argc, char ** argv)
 {
 
-    string fName;
-    int num_u = 11;
-    int num_v = 11;
-    float radius = 0.1;
+    int num_u = 19;
+    int num_v = 9;
+    double r = 1.0;
+    double t = 1.0;
+    double A = 1.0;
+    double B = 1.0;
+    double C = 1.0;
+
     bool shadeWithNormals = false;
 
 
     for(int i=0; i < argc; i++) {
-        if (std::string(argv[i]) == "-f") {
-
-            if (i + 1 < argc) {
-                fName = std::string(argv[i + 1]);
-            }
-            else {
-                std::cerr << "Must provide file name after -f argument" << std::endl;
-            }
-        }
-        else if (std::string(argv[i]) == "-u") {
+        if (std::string(argv[i]) == "-u") {
 
             if (i + 1 < argc) {
                 num_u = std::stoi(std::string(argv[i + 1]));
@@ -197,10 +194,46 @@ main(int argc, char ** argv)
         else if (std::string(argv[i]) == "-r") {
 
             if (i + 1 < argc) {
-                radius = std::stof(std::string(argv[i + 1]));
+                r = std::stod(std::string(argv[i + 1]));
             }
             else {
-                std::cerr << "Must provide radius value after -r argument" << std::endl;
+                std::cerr << "Must provide r value after -r argument" << std::endl;
+            }
+        }
+        else if (std::string(argv[i]) == "-s") {
+
+            if (i + 1 < argc) {
+                s = std::stod(std::string(argv[i + 1]));
+            }
+            else {
+                std::cerr << "Must provide s value after -s argument" << std::endl;
+            }
+        }
+        else if (std::string(argv[i]) == "-A") {
+
+            if (i + 1 < argc) {
+                A = std::stod(std::string(argv[i + 1]));
+            }
+            else {
+                std::cerr << "Must provide A value after -A argument" << std::endl;
+            }
+        }
+        else if (std::string(argv[i]) == "-B") {
+
+            if (i + 1 < argc) {
+                B = std::stod(std::string(argv[i + 1]));
+            }
+            else {
+                std::cerr << "Must provide radius value after -B argument" << std::endl;
+            }
+        }
+        else if (std::string(argv[i]) == "-C") {
+
+            if (i + 1 < argc) {
+                C = std::stod(std::string(argv[i + 1]));
+            }
+            else {
+                std::cerr << "Must provide radius value after -C argument" << std::endl;
             }
         }
         else if (std::string(argv[i]) == "-F") {
@@ -221,73 +254,10 @@ main(int argc, char ** argv)
 
     }
 
-    if (fName.empty()) {
-        fName = "patchPoints.txt";
-    }
-
-    if (debug) {
-        std::cout << "Reading from file: " << fName << std::endl;
-    }
-    std::ifstream input(fName.c_str());
-    if (input.fail()) {
-        std::cerr << "Failed to open" << std::endl;
-    }
-
-    vector<vector<point>> k;
-    // Allocate space for 16 control points
-    for(int i = 0; i < 4; i++) {
-
-        vector<point> iVec;
-
-        for(int j = 0; j < 4; j++) {
-            point p1;
-            iVec.push_back(p1);
-        }
-
-        k.push_back(iVec);
-    }
-
-
-    string currentLine;
-    int i = 0;
-    int j = 0;
-    while(std::getline(input, currentLine)) {
-
-        if(debug) {
-            std::cout << currentLine << std::endl;
-        }
-
-        point point1;
-        std::istringstream ss(currentLine);
-        ss >> point1.x >> point1.y >> point1.z;
-
-        if(debug) {
-            cout << "Set at index: " << i << " and " << j << endl;
-        }
-        k[i][j] = point1;
-
-        if (i == 3) {
-            i = 0;
-            j = j + 1;
-        }
-        else {
-            i = i + 1;
-        }
-
-
-
-        if (debug) {
-            std::cout << "Parsed: " << point1.x << " " << point1.y << " " << point1.z << std::endl;
-        }
-    }
-
-    if (debug) {
-        std::cout << "Done" << std::endl;
-    }
 
     Node* root = new Node("","","");
 
-    // Interpolate the curve
+    // Interpolate the shape
 
     // We always interpolate at 0 and 1
     double du = 1 / (double(num_u) - 1);
@@ -348,6 +318,8 @@ main(int argc, char ** argv)
                 cout << "v is: " << v << " ";
             }
 
+            float Xval = A;
+
             point currentPoint;
             currentPoint.x = 0.0;
             currentPoint.y = 0.0;
@@ -403,7 +375,7 @@ main(int argc, char ** argv)
     for(int i = 0; i < num_u; i++) {
         for(int j = 0; j < num_v; j++) {
 
-            point currentPoint =  interpolatedPoints[i][j]; // 0, or 0,0; 1
+            point currentPoint =  interpolatedPoints[j][i]; // 0, or 0,0; 1
             pointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
             vertexIndexMapping.insert(std::pair<point,int>(currentPoint,numPts));
             vertices.push_back(currentPoint);
