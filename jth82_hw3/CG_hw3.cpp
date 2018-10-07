@@ -217,7 +217,7 @@ main(int argc, char ** argv)
 
     if(debug) {
         cout << "num_u is: " << num_u;
-        cout << "num_v is: " << num_u;
+        cout << "num_v is: " << num_v;
 
     }
 
@@ -300,24 +300,29 @@ main(int argc, char ** argv)
     double u = 0.0;
     double v = 0.0;
     int numPts = 0;
+    int numUPts = 0;
+    int numVPts = 0;
     vector<vector<point>> interpolatedPoints;
 
-    while(u <= 1) {
+    while(numUPts <= num_u) {
         vector<point> uVec;
 
-        while(v <= 1) {
+        v = 0.0;
+        numVPts = 0;
+
+        while(numVPts <= num_v) {
             point p;
             uVec.push_back(p);
-            v += dv;
-            numPts++;
+            numVPts++;
         }
+        numUPts++;
         interpolatedPoints.push_back(uVec);
-        v = 0.0;
-        u += du;
+
     }
 
     if(debug) {
         cout << "Created placeholder for " << numPts << " points" << endl;
+        cout << "Size is: " << numUPts << " by " << numVPts << endl;
     }
 
     std::ostringstream pointVals;
@@ -414,6 +419,10 @@ main(int argc, char ** argv)
 
     for(int i = 0; i < num_u - 1; i++) {
         for(int j = 0; j < num_v -1; j++) {
+
+            if(debug) {
+                cout << "Tesselate for u = " << i << " and v = " << j << endl;
+            }
 
             // Four distinct points become a patch (two tesselated triangles)
             point vertex0 =  interpolatedPoints[i][j]; // 0
