@@ -391,6 +391,7 @@ main(int argc, char ** argv)
             int index0 = vertexIndexMapping.at(vertex0);
 
             int indexiplus1 = i+1;
+
             if (indexiplus1 > num_u - 1) {
                 indexiplus1 = 0;
             }
