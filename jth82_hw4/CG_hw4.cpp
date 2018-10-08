@@ -102,31 +102,15 @@ double fact(int k) {
 
 }
 
-double magnitude(point p) {
-    return sqrt(p.x*p.x+p.y*p.y+p.z*p.z);
-}
 
-double dot(point p, point v) {
-    return p.x*v.x+p.y*v.y+p.z*v.z;
-}
 
-double cosineoftheta(point u, point v) {
-    return dot(u,v)/(magnitude(u)*magnitude(v));
-}
-
-double angleoftheta(point u, point v) {
-    return acos(cosineoftheta(u,v));
-}
 
 point calculateNormal(point point1, point point2, point point3) {
 
+    /*
     point vec1 = point1 - point2;
     point vec2 = point1 - point3;
 
-    if(debug) {
-        cerr << "Cross of: (" << vec1.x << ", " << vec1.y << ", " << vec1.z << ")" << endl;
-        cerr << "  and of: (" << vec2.x << ", " << vec2.y << ", " << vec2.z << ")" <<  endl;
-    }
 
     point cross;
     cross.z = (vec1.x*vec2.y)-(vec2.x*vec1.y);
@@ -149,13 +133,46 @@ point calculateNormal(point point1, point point2, point point3) {
     cross.z = cross.z / pointSums;
 
     return cross;
+    */
+    point p;
+    p.x = 0;
+    p.y = 0;
+    p.z = 0;
+    return p;
 }
 
 double binomial(int k, int i) {
     return fact(k) / (fact(i)*fact(k-i));
 }
 
-double auxC(double w, double m)
+double sgn(double s) {
+    if(s < 0) {
+        return -1;
+    }
+    else if(s == 0) {
+        return 0;
+    }
+    else {
+        return 1;
+    }
+}
+
+double myAbs(double a) {
+    if (a < 0) {
+        return -1*a;
+    }
+    else {
+        return a;
+    }
+}
+
+double c(double w, double m) {
+    return sgn(cos(w))*pow(myAbs(cos(w)),m);
+}
+
+double s(double w, double m) {
+    return sgn(sin(w))*pow(myAbs(sin(w)),m);
+}
 
 int
 main(int argc, char ** argv)
@@ -163,8 +180,8 @@ main(int argc, char ** argv)
 
     int num_u = 19;
     int num_v = 9;
-    double r = 1.0;
-    double t = 1.0;
+    double s1 = 1.0;
+    double s2 = 1.0;
     double A = 1.0;
     double B = 1.0;
     double C = 1.0;
@@ -194,19 +211,19 @@ main(int argc, char ** argv)
         else if (std::string(argv[i]) == "-r") {
 
             if (i + 1 < argc) {
-                r = std::stod(std::string(argv[i + 1]));
+                s1 = std::stod(std::string(argv[i + 1]));
             }
             else {
                 std::cerr << "Must provide r value after -r argument" << std::endl;
             }
         }
-        else if (std::string(argv[i]) == "-s") {
+        else if (std::string(argv[i]) == "-t") {
 
             if (i + 1 < argc) {
-                s = std::stod(std::string(argv[i + 1]));
+                s2 = std::stod(std::string(argv[i + 1]));
             }
             else {
-                std::cerr << "Must provide s value after -s argument" << std::endl;
+                std::cerr << "Must provide r value after -r argument" << std::endl;
             }
         }
         else if (std::string(argv[i]) == "-A") {
@@ -250,7 +267,7 @@ main(int argc, char ** argv)
 
     if(debug) {
         cout << "num_u is: " << num_u;
-        cout << "num_v is: " << num_u;
+        cout << "num_v is: " << num_v;
 
     }
 
@@ -259,31 +276,35 @@ main(int argc, char ** argv)
 
     // Interpolate the shape
 
-    // We always interpolate at 0 and 1
-    double du = 1 / (double(num_u) - 1);
-    double dv = 1 / (double(num_v) - 1);
+    double uRange = M_PI - -M_PI;
+    double vRange = M_PI/2 - -(M_PI/2);
+    double du = uRange / double(num_u);
+    double dv = vRange / double(num_v);
 
     if(debug) {
-        cout << "du is: " << du << " dv is: " << dv << endl;
+        cout << "uRange is: " << uRange << "vRange is: " << vRange << "du is: " << du << " dv is: " << dv << endl;
     }
 
-    double u = 0.0;
-    double v = 0.0;
+
     int numPts = 0;
+    int numUPts = 0;
+    int numVPts = 0;
     vector<vector<point>> interpolatedPoints;
 
-    while(u <= 1) {
+    while(numUPts < num_u) {
         vector<point> uVec;
 
-        while(v <= 1) {
+        numVPts = 0;
+
+        while(numVPts < num_v) {
             point p;
             uVec.push_back(p);
-            v += dv;
+            numVPts++;
             numPts++;
         }
+        numUPts++;
         interpolatedPoints.push_back(uVec);
-        v = 0.0;
-        u += du;
+
     }
 
     if(debug) {
@@ -296,49 +317,27 @@ main(int argc, char ** argv)
     pointVals << "point [" << std::endl;
 
 
-    int n = 3;
-    int m = 3;
-
-
-
-
     int uIdx = 0;
     int vIdx = 0;
-    u = 0.0;
-    v = 0.0;
+    double u =  -M_PI;
+    double v = -M_PI/2;
 
-    while(u <= 1) {
+    while(u <= M_PI) {
 
-        while(v <= 1) {
+        while(v <= (M_PI/2)) {
 
-            if(debug) {
-            }
+
             if(debug) {
                 cout << "u is: " << u << " ";
                 cout << "v is: " << v << " ";
             }
 
-            float Xval = A;
 
             point currentPoint;
-            currentPoint.x = 0.0;
-            currentPoint.y = 0.0;
-            currentPoint.z = 0.0;
+            currentPoint.x = A*c(v,s1)*c(u,s2);
+            currentPoint.y = B*c(v,s1)*s(u,s2);
+            currentPoint.z = C*s(v,s1);
 
-            for(int i = 0; i <= n; i++) {
-
-                double factorU = binomial(n, i) * pow(u,i) * pow(1-u,n-i) ;
-
-                for(int j=0; j <= m; j++) {
-
-                    double factorV = binomial(m, j) * pow(v,j) * pow(1-v,m-j);
-                    if(debug) {
-                        // cout << " Get control point at: " << j << "," << i << endl;
-                    }
-                    point controlPoint = k[i][j]; // TBD
-                    currentPoint = currentPoint + (controlPoint * factorU * factorV);
-                }
-            }
 
             if(debug) {
                 cout << " Set interpolated point at: " << uIdx << "," << vIdx << " to x: " << currentPoint.x << ", y: " << currentPoint.y << ", z: " << currentPoint.z << endl;
@@ -351,7 +350,7 @@ main(int argc, char ** argv)
             v = v+dv;
         }
 
-        v = 0.0;
+        v = -M_PI/2;
         vIdx = 0;
         uIdx++;
         u=u+du;
@@ -367,7 +366,6 @@ main(int argc, char ** argv)
     coordIndexSetVals << "coordIndex [" << std::endl;
 
 
-    int vertexIndex = 0;
     vector<point> normals;
     vector<point> vertices;
 
@@ -375,7 +373,7 @@ main(int argc, char ** argv)
     for(int i = 0; i < num_u; i++) {
         for(int j = 0; j < num_v; j++) {
 
-            point currentPoint =  interpolatedPoints[j][i]; // 0, or 0,0; 1
+            point currentPoint =  interpolatedPoints[i][j]; // 0, or 0,0; 1
             pointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
             vertexIndexMapping.insert(std::pair<point,int>(currentPoint,numPts));
             vertices.push_back(currentPoint);
@@ -384,20 +382,31 @@ main(int argc, char ** argv)
         }
     }
 
-    for(int i = 0; i < num_u - 1; i++) {
-        for(int j = 0; j < num_v -1; j++) {
+
+    for(int i = 0; i < num_u; i++) {
+        for(int j = 0; j < num_v; j++) {
 
             // Four distinct points become a patch (two tesselated triangles)
             point vertex0 =  interpolatedPoints[i][j]; // 0
             int index0 = vertexIndexMapping.at(vertex0);
 
-            point vertex1 = interpolatedPoints[i+1][j]; // 1
+            int indexiplus1 = i+1;
+            if (indexiplus1 > num_u - 1) {
+                indexiplus1 = 0;
+            }
+
+            int indexjplus1 = j+1;
+            if (indexjplus1 > num_v - 1) {
+                indexjplus1 = 0;
+            }
+
+            point vertex1 = interpolatedPoints[indexiplus1][j]; // 1
             int index1 = vertexIndexMapping.at(vertex1);
 
-            point vertex2 = interpolatedPoints[i][j+1]; // 2
+            point vertex2 = interpolatedPoints[i][indexjplus1]; // 2
             int index2 = vertexIndexMapping.at(vertex2);
 
-            point vertex3 = interpolatedPoints[i+1][j+1]; // 3
+            point vertex3 = interpolatedPoints[indexiplus1][indexjplus1]; // 3
             int index3 = vertexIndexMapping.at(vertex3);
 
             if(debug) {
@@ -422,6 +431,7 @@ main(int argc, char ** argv)
             numPts++;
         }
     }
+
 
 
     if(debug) {
@@ -468,44 +478,6 @@ main(int argc, char ** argv)
 
     interpolatedSeperator->addChild(indexedFaceSet);
     root->addChild(interpolatedSeperator);
-
-
-
-    // Plot the control points
-
-    for(int i = 0; i <= 3; i++) {
-
-        for(int j = 0; j <=3; j++) {
-
-            Node* cpSep = new Node("Separator {","","}");
-
-            point point1 = k.at(j).at(i);
-            double x = point1.x;
-            double y = point1.y;
-            double z = point1.z;
-
-            if(debug) {
-                // std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
-            }
-
-            std::ostringstream transformStr;
-            transformStr << "translation " << x << " " << y << " " << z << std::endl;
-            Node* translation = new Node("Transform {",transformStr.str(),"}");
-            cpSep->addChild(translation);
-
-            std::ostringstream radiusStr;
-            radiusStr << "radius  " << radius << std::endl;
-            Node* sphere = new Node("Sphere {",radiusStr.str(),"}");
-            cpSep->addChild(sphere);
-
-            root->addChild(cpSep);
-
-        }
-
-    }
-
-
-
 
 
     if(!debug) {

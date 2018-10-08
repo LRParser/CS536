@@ -9,7 +9,7 @@ default: all
 
 all: CG_hw4
 
-CG_hw3: $(OBJS)
+CG_hw4: $(OBJS)
 	$(CXX) -o CG_hw4 $(OBJS)
 
 CG_hw4.o: CG_hw4.cpp
@@ -28,7 +28,7 @@ outputonly: all
 
 
 run: all
-	./CG_hw4 -f patchPoints.txt -u 9 -v 9 -r 0.1 -F > out.iv && ivview out.iv
+	./CG_hw4 > out.iv && ivview out.iv
 
 runsmooth: all
 	./CG_hw4 -S -f patchPoints.txt -u 9 -v 9 -r 0.1 > out.iv && ivview out.iv
