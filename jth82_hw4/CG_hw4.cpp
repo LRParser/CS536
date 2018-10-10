@@ -355,25 +355,26 @@ main(int argc, char ** argv) {
     pointVals << "point [" << std::endl;
 
 
-    int uIdx = 0;
-    int vIdx = 0;
-    double u = -M_PI;
-    double v = -M_PI / 2;
+    double u = 0;
+    double v = 0;
 
     double uMax = 2 * M_PI;
     double vMax = M_PI;
 
     double eps = 1e-10;
 
-    while (u <= M_PI - eps) {
+    for(int i=0; i < num_u; i++) {
 
-        while (v <= (M_PI / 2) - eps) {
+        for(int j = 0; j < num_v; j++) {
 
 
             if (debug) {
                 cerr << "u is: " << u << " ";
                 cerr << "v is: " << v << " ";
             }
+
+            u = (((double) i) / num_u * 2*M_PI) - M_PI;
+            v = (((double) j) / num_v * 1*M_PI) - (.5*M_PI);
 
 
             point currentPoint;
@@ -383,21 +384,13 @@ main(int argc, char ** argv) {
 
 
             if (debug) {
-                cerr << " Set interpolated point at: " << uIdx << "," << vIdx << " to x: " << currentPoint.x << ", y: "
+                cerr << " Set interpolated point at: " << i << "," << j << " to x: " << currentPoint.x << ", y: "
                      << currentPoint.y << ", z: " << currentPoint.z << endl;
             }
 
-
-            interpolatedPoints[uIdx][vIdx] = currentPoint;
-
-            vIdx++;
-            v = v + dv;
+            interpolatedPoints[i][j] = currentPoint;
         }
 
-        v = -M_PI / 2;
-        vIdx = 0;
-        uIdx++;
-        u = u + du;
 
     }
 
@@ -425,13 +418,28 @@ main(int argc, char ** argv) {
         }
     }
 
-    point origin;
-    origin.x = 0;
-    origin.y = 0;
-    origin.z = 1;
 
-    vertexIndexMapping.insert(std::pair<point, int>(origin, numPts));
-    vertices.push_back(origin);
+    point northPole;
+    northPole.x = 0;
+    northPole.y = 0;
+    northPole.z = C;
+
+    int northPoleIndex = numPts;
+
+    vertexIndexMapping.insert(std::pair<point, int>(northPole, numPts));
+    vertices.push_back(northPole);
+
+    numPts++;
+
+
+    point southPole;
+    southPole.x = 0;
+    southPole.y = 0;
+    southPole.z = -1*C;
+
+    int southPoleIndex = numPts;
+    vertexIndexMapping.insert(std::pair<point, int>(southPole, numPts));
+    vertices.push_back(southPole);
 
 
     for(auto pt = vertices.begin(); pt < vertices.end(); pt++) {
@@ -440,7 +448,6 @@ main(int argc, char ** argv) {
 
     }
 
-    int originIndex = numPts;
 
     numPts++;
 
@@ -520,9 +527,13 @@ main(int argc, char ** argv) {
                     int indexi = i;
 
                     bool interpolateTopCap = false;
-
+                    bool interpolateBottomCap = false;
                     if(j == num_v -1) {
                         interpolateTopCap = true;
+                    }
+
+                    if(j == 0) {
+                        interpolateBottomCap = true;
                     }
 
 
@@ -540,12 +551,7 @@ main(int argc, char ** argv) {
                             cerr << "Top cap interpolate" << endl;
                         }
 
-
-
-                        //point vertex0 = interpolatedPoints[indexi][indexjplus1]; // 1
-                        //int index0 = vertexIndexMapping.at(vertex0);
-
-                        int index0 = originIndex;
+                        int index0 = northPoleIndex;
 
                         point vertex1 = interpolatedPoints[indexi][indexj]; // 1
                         int index1 = vertexIndexMapping.at(vertex1);
@@ -553,22 +559,6 @@ main(int argc, char ** argv) {
                         point vertex2 = interpolatedPoints[indexiplus1][indexj]; // 1
                         int index2 = vertexIndexMapping.at(vertex2);
 
-
-                        /*
-                        point vertex3 = interpolatedPoints[indexi][indexjplus1]; // 1
-                        int index3 = vertexIndexMapping.at(vertex3);
-
-                        point vertex4 = interpolatedPoints[indexi][indexj]; // 1
-                        int index4 = vertexIndexMapping.at(vertex4);
-
-                        point vertex5 = interpolatedPoints[indexiplus1][indexj]; // 1
-                        int index5 = vertexIndexMapping.at(vertex5);
-
-
-                        vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
-                        //vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
-                        vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
-                        */
 
                         coordIndexSetVals << index0 << ", ";
                         coordIndexSetVals << index1 << ", ";
@@ -579,11 +569,34 @@ main(int argc, char ** argv) {
                             cerr << "TopCap Indices at: " << index0 << ", " << index1 << ", " << index2 << endl;
                         }
 
+                    }
+                    else if(interpolateBottomCap) {
+                        if (debug) {
+                            cerr << "Bottom cap interpolate" << endl;
+                        }
 
 
-                        numPts++;
+                        int index0 = southPoleIndex;
 
-                    } else {
+                        point vertex1 = interpolatedPoints[indexi][indexjplus1]; // 1
+                        int index1 = vertexIndexMapping.at(vertex1);
+
+                        point vertex2 = interpolatedPoints[indexiplus1][indexjplus1]; // 1
+                        int index2 = vertexIndexMapping.at(vertex2);
+
+
+
+                        coordIndexSetVals << index0 << ", ";
+                        coordIndexSetVals << index1 << ", ";
+                        coordIndexSetVals << index2 << ", ";
+                        coordIndexSetVals << -1 << ", " << endl;
+
+                        if (debug) {
+                            cerr << "Bottom Indices at: " << index0 << ", " << index1 << ", " << index2 << endl;
+                        }
+
+                    }
+                    else {
                         // Four distinct points become a patch (two tesselated triangles)
                         point vertex0 = interpolatedPoints[i][j]; // 0
                         int index0 = vertexIndexMapping.at(vertex0);
@@ -607,22 +620,16 @@ main(int argc, char ** argv) {
                         vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
                         vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
 
-
-
                         coordIndexSetVals << index0 << ", ";
                         coordIndexSetVals << index1 << ", ";
                         coordIndexSetVals << index2 << ", ";
                         coordIndexSetVals << -1 << ", " << endl;
-
-
 
                         coordIndexSetVals << index1 << ", ";
                         coordIndexSetVals << index3 << ", ";
                         coordIndexSetVals << index2 << ", ";
                         coordIndexSetVals << -1 << ", " << endl;
 
-
-                        numPts++;
                     }
 
 
