@@ -525,13 +525,13 @@ main(int argc, char ** argv) {
                     point vertex0 = southPole;
                     int index0 = southPoleIndex;
 
-                    point vertex1 = interpolatedPoints[indexi][indexjplus1]; // 1
+                    point vertex1 = interpolatedPoints[indexi][indexj]; // 1
                     int index1 = vertexIndexMapping.at(vertex1);
 
-                    point vertex2 = interpolatedPoints[indexiplus1][indexjplus1]; // 1
+                    point vertex2 = interpolatedPoints[indexi][indexiplus1]; // 1
                     int index2 = vertexIndexMapping.at(vertex2);
 
-                    point vertex3 = interpolatedPoints[indexiplus1][indexjplus1]; // 3
+                    point vertex3 = interpolatedPoints[indexi][indexiplus1]; // 3
                     int index3 = vertexIndexMapping.at(vertex3);
 
 
