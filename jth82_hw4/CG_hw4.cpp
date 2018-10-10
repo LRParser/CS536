@@ -169,6 +169,15 @@ double s(double w, double m) {
     return sgn(sin(w))*pow(myAbs(sin(w)),m);
 }
 
+point calcNormal(double A, double B, double C, double s1, double s2, double u, double v) {
+    point normal;
+    normal.x = ((float)1/A)*c(v,2-s1)*c(u,2-s2);
+    normal.y = ((float)1/B)*c(v,2-s1)*s(u,2-s2);
+    normal.z = ((float)1/C)*s(v,2-s1);
+    return normal;
+
+}
+
 class twoclosestpoints {
 public:
     point p0;
@@ -327,6 +336,7 @@ main(int argc, char ** argv) {
             currentPoint.z = C * s(v, s1);
 
 
+
             if (debug) {
                 cerr << " Set interpolated point at: " << i << "," << j << " to x: " << currentPoint.x << ", y: "
                      << currentPoint.y << ", z: " << currentPoint.z << endl;
@@ -354,10 +364,15 @@ main(int argc, char ** argv) {
     for (int i = 0; i < num_u; i++) {
         for (int j = 0; j < num_v; j++) {
 
+            u = (((double) i) / num_u * 2*M_PI) - M_PI;
+            v = (((double) j) / num_v * 1*M_PI) - (.5*M_PI);
+
             point currentPoint = interpolatedPoints[i][j]; // 0, or 0,0; 1
             vertexIndexMapping.insert(std::pair<point, int>(currentPoint, numPts));
             vertices.push_back(currentPoint);
-
+            point currentNormal = calcNormal(A,B,C,s1,s2,u,v);
+            normals.push_back(currentNormal);
+            vertexNormalMapping[currentPoint] = currentNormal;
             numPts++;
         }
     }
@@ -373,6 +388,8 @@ main(int argc, char ** argv) {
     vertexIndexMapping.insert(std::pair<point, int>(northPole, numPts));
     vertices.push_back(northPole);
 
+    vertexNormalMapping[northPole] = northPole;
+
     numPts++;
 
 
@@ -384,6 +401,10 @@ main(int argc, char ** argv) {
     int southPoleIndex = numPts;
     vertexIndexMapping.insert(std::pair<point, int>(southPole, numPts));
     vertices.push_back(southPole);
+
+
+    point southPoleNormal = calcNormal(A,B,C,s1,s2,(double)-1*(M_PI)/2,-1*M_PI);
+    vertexNormalMapping[southPole] = southPoleNormal;
 
 
     for(auto pt = vertices.begin(); pt < vertices.end(); pt++) {
@@ -435,6 +456,8 @@ main(int argc, char ** argv) {
                 int indexjplus1 = j + 1;
                 int indexj = j;
                 int indexi = i;
+                u = (((double) i) / num_u * 2*M_PI) - M_PI;
+                v = (((double) j) / num_v * 1*M_PI) - (.5*M_PI);
 
                 bool interpolateTopCap = false;
                 bool interpolateBottomCap = false;
@@ -442,8 +465,8 @@ main(int argc, char ** argv) {
                     interpolateTopCap = true;
                 }
 
-                if(j == 0) {
-                    interpolateBottomCap = true;
+                if(i == 0 && j == 0) {
+                    interpolateBottomCap = false;
                 }
 
 
@@ -476,9 +499,9 @@ main(int argc, char ** argv) {
                     point unitVector;
                     unitVector.x = 0;
                     unitVector.y = 0;
-                    unitVector.z = 1;
+                    unitVector.z = 0;
 
-                    vertexNormalMapping[vertex0] = unitVector;
+                    //vertexNormalMapping[vertex0] = unitVector;
                     //vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
                     //vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
                     //vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
@@ -511,16 +534,19 @@ main(int argc, char ** argv) {
                     point vertex3 = interpolatedPoints[indexiplus1][indexjplus1]; // 3
                     int index3 = vertexIndexMapping.at(vertex3);
 
-                    point unitVector;
-                    unitVector.x = 0;
-                    unitVector.y = 0;
-                    unitVector.z = 1;
-                    vertexNormalMapping[vertex0] = unitVector;
 
-                    //vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
+
+                    point p;
+                    vertexNormalMapping[vertex0] = calcNormal(A,B,C,s1,s2,u,v);
+                    vertexNormalMapping[vertex1] = calcNormal(A,B,C,s1,s2,u,v);
+                    vertexNormalMapping[vertex2] = calcNormal(A,B,C,s1,s2,u,v);
+                    vertexNormalMapping[vertex3] = calcNormal(A,B,C,s1,s2,u,v);
+
+                    vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
                     vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
                     vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
                     vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
+
 
                     coordIndexSetVals << index0 << ", ";
                     coordIndexSetVals << index1 << ", ";
@@ -551,10 +577,15 @@ main(int argc, char ** argv) {
                     }
 
 
-                    vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
-                    vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
-                    vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
-                    vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
+                    //vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
+                    //vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
+                    //vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
+                    //vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
+
+                    vertexNormalMapping[vertex0] = calcNormal(A,B,C,s1,s2,u,v);
+                    vertexNormalMapping[vertex1] = calcNormal(A,B,C,s1,s2,u,v);
+                    vertexNormalMapping[vertex2] = calcNormal(A,B,C,s1,s2,u,v);
+                    vertexNormalMapping[vertex3] = calcNormal(A,B,C,s1,s2,u,v);
 
                     coordIndexSetVals << index0 << ", ";
                     coordIndexSetVals << index1 << ", ";
