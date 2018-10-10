@@ -527,7 +527,7 @@ main(int argc, char ** argv) {
 
 
                     if(indexiplus1 > num_u - 1) {
-                        indexiplus1 = 3;
+                        indexiplus1 = 0;
                     }
                     if(indexjplus1 > num_v - 1) {
                         indexjplus1 = 0;
@@ -613,7 +613,7 @@ main(int argc, char ** argv) {
                         coordIndexSetVals << index1 << ", ";
                         coordIndexSetVals << index2 << ", ";
                         coordIndexSetVals << -1 << ", " << endl;
-                        
+
 
 
                         coordIndexSetVals << index1 << ", ";
