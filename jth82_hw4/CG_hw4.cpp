@@ -102,7 +102,7 @@ double fact(int k) {
 
 }
 
-point calculateNormalOrig(point point1, point point2, point point3) {
+point calculateNormal(point point1, point point2, point point3) {
 
     point vec1 = point1 - point2;
     point vec2 = point1 - point3;
@@ -326,9 +326,6 @@ main(int argc, char ** argv) {
             currentPoint.y = B * c(v, s1) * s(u, s2);
             currentPoint.z = C * s(v, s1);
 
-            // Calculate normals for the point
-            point normalPoint;
-            normalPoint.x = ((double) 1 / A)
 
             if (debug) {
                 cerr << " Set interpolated point at: " << i << "," << j << " to x: " << currentPoint.x << ", y: "
