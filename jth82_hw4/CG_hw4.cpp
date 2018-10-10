@@ -174,9 +174,56 @@ double s(double w, double m) {
     return sgn(sin(w))*pow(myAbs(sin(w)),m);
 }
 
+class twoclosestpoints {
+public:
+    point p0;
+    point p1;
+};
+
+vector<point> getTwoClosestPoints(vector<point> vertices, point refPoint) {
+    vector<point> returnVec;
+    double eps = 1e-10;
+
+    // Find the shortest distance
+    int closestPointIndex = -1;
+    double minDist = 999999999;
+    point closestPoint;
+
+    int i = 0;
+    for(auto pt = vertices.begin(); pt != vertices.end(); pt++) {
+        point comparePoint = *pt;
+        double dist = pow(comparePoint.x-refPoint.x,2)+ pow(comparePoint.y-refPoint.y,2) +pow(comparePoint.z-refPoint.z,2);
+        if (dist < minDist && dist > eps) {
+            minDist = dist;
+            closestPoint = comparePoint;
+            closestPointIndex = i;
+        }
+        i++;
+    }
+
+    i = 0;
+    minDist = 999999999;
+    point nextClosestPoint;
+    for(auto pt = vertices.begin(); pt != vertices.end(); pt++) {
+        point comparePoint = *pt;
+        double dist = pow(comparePoint.x-refPoint.x,2)+ pow(comparePoint.y-refPoint.y,2) +pow(comparePoint.z-refPoint.z,2);
+        if (dist < minDist && i != closestPointIndex && dist > eps) {
+            minDist = dist;
+            nextClosestPoint = comparePoint;
+            closestPointIndex = i;
+        }
+        i++;
+    }
+
+    returnVec.push_back(closestPoint);
+    returnVec.push_back(nextClosestPoint);
+
+    return returnVec;
+
+}
+
 int
-main(int argc, char ** argv)
-{
+main(int argc, char ** argv) {
 
     int num_u = 19;
     int num_v = 9;
@@ -185,104 +232,95 @@ main(int argc, char ** argv)
     double A = 1.0;
     double B = 1.0;
     double C = 1.0;
+    bool renderSpheres = false;
+    bool renderClosest = false;
+    float radius = 0.1;
 
     bool shadeWithNormals = false;
 
 
-    for(int i=0; i < argc; i++) {
+    for (int i = 0; i < argc; i++) {
         if (std::string(argv[i]) == "-u") {
 
             if (i + 1 < argc) {
                 num_u = std::stoi(std::string(argv[i + 1]));
-            }
-            else {
+            } else {
                 std::cerr << "Must provide num_u value after -u argument" << std::endl;
             }
-        }
-        else if (std::string(argv[i]) == "-v") {
+        } else if (std::string(argv[i]) == "-v") {
 
             if (i + 1 < argc) {
                 num_v = std::stoi(std::string(argv[i + 1]));
-            }
-            else {
+            } else {
                 std::cerr << "Must provide num_v value after -v argument" << std::endl;
             }
-        }
-        else if (std::string(argv[i]) == "-r") {
+        } else if (std::string(argv[i]) == "-r") {
 
             if (i + 1 < argc) {
                 s1 = std::stod(std::string(argv[i + 1]));
-            }
-            else {
+            } else {
                 std::cerr << "Must provide r value after -r argument" << std::endl;
             }
-        }
-        else if (std::string(argv[i]) == "-t") {
+        } else if (std::string(argv[i]) == "-t") {
 
             if (i + 1 < argc) {
                 s2 = std::stod(std::string(argv[i + 1]));
-            }
-            else {
+            } else {
                 std::cerr << "Must provide r value after -r argument" << std::endl;
             }
-        }
-        else if (std::string(argv[i]) == "-A") {
+        } else if (std::string(argv[i]) == "-A") {
 
             if (i + 1 < argc) {
                 A = std::stod(std::string(argv[i + 1]));
-            }
-            else {
+            } else {
                 std::cerr << "Must provide A value after -A argument" << std::endl;
             }
-        }
-        else if (std::string(argv[i]) == "-B") {
+        } else if (std::string(argv[i]) == "-B") {
 
             if (i + 1 < argc) {
                 B = std::stod(std::string(argv[i + 1]));
-            }
-            else {
+            } else {
                 std::cerr << "Must provide radius value after -B argument" << std::endl;
             }
-        }
-        else if (std::string(argv[i]) == "-C") {
+        } else if (std::string(argv[i]) == "-C") {
 
             if (i + 1 < argc) {
                 C = std::stod(std::string(argv[i + 1]));
-            }
-            else {
+            } else {
                 std::cerr << "Must provide radius value after -C argument" << std::endl;
             }
-        }
-        else if (std::string(argv[i]) == "-F") {
+        } else if (std::string(argv[i]) == "-F") {
 
             shadeWithNormals = false;
-        }
-        else if (std::string(argv[i]) == "-S") {
+        } else if (std::string(argv[i]) == "-S") {
             shadeWithNormals = true;
-        }
-        else if (std::string(argv[i]) == "-d") {
+        } else if (std::string(argv[i]) == "-s") {
+            renderSpheres = true;
+        } else if (std::string(argv[i]) == "-c") {
+            renderClosest = true;
+        } else if (std::string(argv[i]) == "-d") {
             debug = true;
         }
     }
 
-    if(debug) {
-        cout << "num_u is: " << num_u;
-        cout << "num_v is: " << num_v;
+    if (debug) {
+        cerr << "num_u is: " << num_u;
+        cerr << "num_v is: " << num_v;
 
     }
 
 
-    Node* root = new Node("","","");
+    Node *root = new Node("", "", "");
 
     // Interpolate the shape
 
     double uRange = M_PI - -M_PI;
-    double vRange = M_PI/2 - -(M_PI/2);
+    double vRange = M_PI / 2 - -(M_PI / 2);
     double du = uRange / double(num_u);
     double dv = vRange / double(num_v);
 
-    if(debug) {
-        cout << "uRange is: " << uRange << "vRange is: " << vRange << "du is: " << du << " dv is: " << dv << endl;
+    if (debug) {
+        cerr << "uRange is: " << uRange << "vRange is: " << vRange << "du is: " << du << " dv is: " << dv << endl;
     }
 
 
@@ -291,12 +329,12 @@ main(int argc, char ** argv)
     int numVPts = 0;
     vector<vector<point>> interpolatedPoints;
 
-    while(numUPts < num_u) {
+    while (numUPts < num_u) {
         vector<point> uVec;
 
         numVPts = 0;
 
-        while(numVPts < num_v) {
+        while (numVPts < num_v) {
             point p;
             uVec.push_back(p);
             numVPts++;
@@ -307,8 +345,8 @@ main(int argc, char ** argv)
 
     }
 
-    if(debug) {
-        cout << "Created placeholder for " << numPts << " points" << endl;
+    if (debug) {
+        cerr << "Created placeholder for " << numPts << " points" << endl;
     }
 
     std::ostringstream pointVals;
@@ -319,47 +357,53 @@ main(int argc, char ** argv)
 
     int uIdx = 0;
     int vIdx = 0;
-    double u =  -M_PI;
-    double v = -M_PI/2;
+    double u = -M_PI;
+    double v = -M_PI / 2;
 
-    while(u <= M_PI) {
+    double uMax = 2 * M_PI;
+    double vMax = M_PI;
 
-        while(v <= (M_PI/2)) {
+    double eps = 1e-10;
+
+    while (u <= M_PI - eps) {
+
+        while (v <= (M_PI / 2) - eps) {
 
 
-            if(debug) {
-                cout << "u is: " << u << " ";
-                cout << "v is: " << v << " ";
+            if (debug) {
+                cerr << "u is: " << u << " ";
+                cerr << "v is: " << v << " ";
             }
 
 
             point currentPoint;
-            currentPoint.x = A*c(v,s1)*c(u,s2);
-            currentPoint.y = B*c(v,s1)*s(u,s2);
-            currentPoint.z = C*s(v,s1);
+            currentPoint.x = A * c(v, s1) * c(u, s2);
+            currentPoint.y = B * c(v, s1) * s(u, s2);
+            currentPoint.z = C * s(v, s1);
 
 
-            if(debug) {
-                cout << " Set interpolated point at: " << uIdx << "," << vIdx << " to x: " << currentPoint.x << ", y: " << currentPoint.y << ", z: " << currentPoint.z << endl;
+            if (debug) {
+                cerr << " Set interpolated point at: " << uIdx << "," << vIdx << " to x: " << currentPoint.x << ", y: "
+                     << currentPoint.y << ", z: " << currentPoint.z << endl;
             }
 
 
             interpolatedPoints[uIdx][vIdx] = currentPoint;
 
             vIdx++;
-            v = v+dv;
+            v = v + dv;
         }
 
-        v = -M_PI/2;
+        v = -M_PI / 2;
         vIdx = 0;
         uIdx++;
-        u=u+du;
+        u = u + du;
 
     }
 
-    if(debug) {
-        cout << "numPts is" << numPts << endl;
-        cout << "Writing to OpenInventor format" << endl;
+    if (debug) {
+        cerr << "numPts is" << numPts << endl;
+        cerr << "Writing to OpenInventor format" << endl;
     }
 
 
@@ -370,124 +414,277 @@ main(int argc, char ** argv)
     vector<point> vertices;
 
     numPts = 0;
-    for(int i = 0; i < num_u; i++) {
-        for(int j = 0; j < num_v; j++) {
+    for (int i = 0; i < num_u; i++) {
+        for (int j = 0; j < num_v; j++) {
 
-            point currentPoint =  interpolatedPoints[i][j]; // 0, or 0,0; 1
-            pointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
-            vertexIndexMapping.insert(std::pair<point,int>(currentPoint,numPts));
+            point currentPoint = interpolatedPoints[i][j]; // 0, or 0,0; 1
+            vertexIndexMapping.insert(std::pair<point, int>(currentPoint, numPts));
             vertices.push_back(currentPoint);
 
             numPts++;
         }
     }
 
+    point origin;
+    origin.x = 0;
+    origin.y = 0;
+    origin.z = 1;
 
-    for(int i = 0; i < num_u; i++) {
-        for(int j = 0; j < num_v; j++) {
+    vertexIndexMapping.insert(std::pair<point, int>(origin, numPts));
+    vertices.push_back(origin);
 
-            // Four distinct points become a patch (two tesselated triangles)
-            point vertex0 =  interpolatedPoints[i][j]; // 0
-            int index0 = vertexIndexMapping.at(vertex0);
 
-            int indexiplus1 = i+1;
+    for(auto pt = vertices.begin(); pt < vertices.end(); pt++) {
+        point currentPoint = *pt;
+        pointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
 
-            if (indexiplus1 > num_u - 1) {
-                indexiplus1 = 0;
-            }
-
-            int indexjplus1 = j+1;
-            if (indexjplus1 > num_v - 1) {
-                indexjplus1 = 0;
-            }
-
-            point vertex1 = interpolatedPoints[indexiplus1][j]; // 1
-            int index1 = vertexIndexMapping.at(vertex1);
-
-            point vertex2 = interpolatedPoints[i][indexjplus1]; // 2
-            int index2 = vertexIndexMapping.at(vertex2);
-
-            point vertex3 = interpolatedPoints[indexiplus1][indexjplus1]; // 3
-            int index3 = vertexIndexMapping.at(vertex3);
-
-            if(debug) {
-                cout << "Indices at: " << index0 << ", " << index1 << ", " << index2 << ", " << index3 << endl;
-            }
-
-            vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
-            vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
-            vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
-            vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
-
-            coordIndexSetVals << index0 << ", ";
-            coordIndexSetVals << index1 << ", ";
-            coordIndexSetVals << index2 << ", ";
-            coordIndexSetVals << -1 << ", " << endl;
-
-            coordIndexSetVals << index1 << ", ";
-            coordIndexSetVals << index3 << ", ";
-            coordIndexSetVals << index2 << ", ";
-            coordIndexSetVals << -1 << ", " << endl;
-
-            numPts++;
-        }
     }
 
+    int originIndex = numPts;
 
+    numPts++;
 
-    if(debug) {
-        cout << "Serializing to OI format" << endl;
-    }
+    if (renderSpheres) {
 
+        for (auto pt = vertices.begin(); pt != vertices.end(); pt++) {
+            Node *cpSep = new Node("Separator {", "", "}");
+            point point1 = *pt;
+            double x = point1.x;
+            double y = point1.y;
+            double z = point1.z;
 
-    pointVals << "]" << std::endl;
-    coordIndexSetVals << "]" << std::endl;
+            if (debug) {
+                // std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+            }
 
-    Node* shapeHints = new Node("ShapeHints {","vertexOrdering        COUNTERCLOCKWISE\n","}");
-    root->addChild(shapeHints);
+            std::ostringstream transformStr;
+            transformStr << "translation " << x << " " << y << " " << z << std::endl;
+            Node *translation = new Node("Transform {", transformStr.str(), "}");
+            cpSep->addChild(translation);
 
-    Node* interpolatedSeperator = new Node("Separator {","","}");
+            std::ostringstream radiusStr;
+            radiusStr << "radius  " << radius << std::endl;
+            Node *sphere = new Node("Sphere {", radiusStr.str(), "}");
+            cpSep->addChild(sphere);
 
-    Node* interpolatedPointsNode = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
-
-    Node* indexedFaceSet = new Node("IndexedFaceSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
-
-    interpolatedSeperator->addChild(interpolatedPointsNode);
-
-    if(shadeWithNormals) {
-        // Calculate vertex normals as we are doing smooth shading.
-        Node* normalBindingNode = new Node("NormalBinding {","value        PER_VERTEX_INDEXED","}");
-        interpolatedSeperator->addChild(normalBindingNode);
-
-        std::ostringstream normalVectorVals;
-
-        normalVectorVals << "vector [" << std::endl;
-
-        for(auto cit= vertices.begin(); cit != vertices.end(); cit++) {
-            point p = *cit;
-            point n = vertexNormalMapping[p];
-            normalVectorVals << n.x << " " << n.y << " " << n.z << "," << std::endl;
+            root->addChild(cpSep);
         }
 
-        normalVectorVals << "]" << std::endl;
+    }
+    else {
 
-        Node* normalVectorsNode = new Node("Normal {",normalVectorVals.str(),"}");
-        interpolatedSeperator->addChild(normalVectorsNode);
+        if (renderClosest) {
+            // For each point, render a triangle with the next 2 closest points
+
+            vector<point> vertexCopy;
+            for (auto it = vertices.begin(); it < vertices.end(); it++) {
+                point vertex0 = *it;
+                vertexCopy.push_back(vertex0);
+            }
+
+            int i = 0;
+            for (auto it = vertices.begin(); it < vertices.end(); it++) {
+                point vertex0 = *it;
+                int index0 = vertexIndexMapping.at(vertex0);
+
+                vector<point> nextTwoPoints = getTwoClosestPoints(vertexCopy, vertex0);
+                point vertex1 = nextTwoPoints.at(0);
+                int index1 = vertexIndexMapping.at(vertex1);
+
+                point vertex2 = nextTwoPoints.at(1);
+                int index2 = vertexIndexMapping.at(vertex2);
+
+                coordIndexSetVals << index2 << ", ";
+                coordIndexSetVals << index1 << ", ";
+                coordIndexSetVals << index0 << ", ";
+                coordIndexSetVals << -1 << ", " << endl;
+
+                if(i < 5) {
+                    vertexCopy.erase(vertexCopy.begin() + i);
+
+                }
+                i++;
+            }
+
+        }
+        else {
+            // Tesselate
+
+            // num_u
+            for (int i = 0; i < num_u; i++) {
+                for (int j = 0; j < num_v; j++) {
+
+                    int indexiplus1 = i + 1;
+                    int indexjplus1 = j + 1;
+                    int indexj = j;
+                    int indexi = i;
+
+                    bool interpolateTopCap = false;
+
+                    if(j == num_v -1) {
+                        interpolateTopCap = true;
+                    }
 
 
+                    if(indexiplus1 > num_u - 1) {
+                        indexiplus1 = 3;
+                    }
+                    if(indexjplus1 > num_v - 1) {
+                        indexjplus1 = 0;
+                    }
+
+
+                    if (interpolateTopCap) {
+
+                        if (debug) {
+                            cerr << "Top cap interpolate" << endl;
+                        }
+
+
+
+                        //point vertex0 = interpolatedPoints[indexi][indexjplus1]; // 1
+                        //int index0 = vertexIndexMapping.at(vertex0);
+
+                        int index0 = originIndex;
+
+                        point vertex1 = interpolatedPoints[indexi][indexj]; // 1
+                        int index1 = vertexIndexMapping.at(vertex1);
+
+                        point vertex2 = interpolatedPoints[indexiplus1][indexj]; // 1
+                        int index2 = vertexIndexMapping.at(vertex2);
+
+
+                        /*
+                        point vertex3 = interpolatedPoints[indexi][indexjplus1]; // 1
+                        int index3 = vertexIndexMapping.at(vertex3);
+
+                        point vertex4 = interpolatedPoints[indexi][indexj]; // 1
+                        int index4 = vertexIndexMapping.at(vertex4);
+
+                        point vertex5 = interpolatedPoints[indexiplus1][indexj]; // 1
+                        int index5 = vertexIndexMapping.at(vertex5);
+
+
+                        vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
+                        //vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
+                        vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
+                        */
+
+                        coordIndexSetVals << index0 << ", ";
+                        coordIndexSetVals << index1 << ", ";
+                        coordIndexSetVals << index2 << ", ";
+                        coordIndexSetVals << -1 << ", " << endl;
+
+                        if (debug) {
+                            cerr << "TopCap Indices at: " << index0 << ", " << index1 << ", " << index2 << endl;
+                        }
+
+
+
+                        numPts++;
+
+                    } else {
+                        // Four distinct points become a patch (two tesselated triangles)
+                        point vertex0 = interpolatedPoints[i][j]; // 0
+                        int index0 = vertexIndexMapping.at(vertex0);
+
+                        point vertex1 = interpolatedPoints[indexiplus1][j]; // 1
+                        int index1 = vertexIndexMapping.at(vertex1);
+
+                        point vertex2 = interpolatedPoints[i][indexjplus1]; // 2
+                        int index2 = vertexIndexMapping.at(vertex2);
+
+                        point vertex3 = interpolatedPoints[indexiplus1][indexjplus1]; // 3
+                        int index3 = vertexIndexMapping.at(vertex3);
+
+                        if (debug) {
+                            cerr << "Indices at: " << index0 << ", " << index1 << ", " << index2 << ", " << index3 << endl;
+                        }
+
+
+                        vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
+                        vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
+                        vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
+                        vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
+
+
+
+                        coordIndexSetVals << index0 << ", ";
+                        coordIndexSetVals << index1 << ", ";
+                        coordIndexSetVals << index2 << ", ";
+                        coordIndexSetVals << -1 << ", " << endl;
+                        
+
+
+                        coordIndexSetVals << index1 << ", ";
+                        coordIndexSetVals << index3 << ", ";
+                        coordIndexSetVals << index2 << ", ";
+                        coordIndexSetVals << -1 << ", " << endl;
+
+
+                        numPts++;
+                    }
+
+
+                }
+            }
+
+
+        }
+
+        if(debug) {
+            cerr << "Serializing to OI format" << endl;
+        }
+
+
+        pointVals << "]" << std::endl;
+        coordIndexSetVals << "]" << std::endl;
+
+        Node* shapeHints = new Node("ShapeHints {","vertexOrdering        COUNTERCLOCKWISE\n","}");
+        root->addChild(shapeHints);
+
+        Node* interpolatedSeperator = new Node("Separator {","","}");
+
+        Node* interpolatedPointsNode = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
+
+        Node* indexedFaceSet = new Node("IndexedFaceSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
+
+        interpolatedSeperator->addChild(interpolatedPointsNode);
+
+        if(shadeWithNormals) {
+            // Calculate vertex normals as we are doing smooth shading.
+            Node* normalBindingNode = new Node("NormalBinding {","value        PER_VERTEX_INDEXED","}");
+            interpolatedSeperator->addChild(normalBindingNode);
+
+            std::ostringstream normalVectorVals;
+
+            normalVectorVals << "vector [" << std::endl;
+
+            for(auto cit= vertices.begin(); cit != vertices.end(); cit++) {
+                point p = *cit;
+                point n = vertexNormalMapping[p];
+                normalVectorVals << n.x << " " << n.y << " " << n.z << "," << std::endl;
+            }
+
+            normalVectorVals << "]" << std::endl;
+
+            Node* normalVectorsNode = new Node("Normal {",normalVectorVals.str(),"}");
+            interpolatedSeperator->addChild(normalVectorsNode);
+
+
+        }
+
+        interpolatedSeperator->addChild(indexedFaceSet);
+        root->addChild(interpolatedSeperator);
     }
 
-    interpolatedSeperator->addChild(indexedFaceSet);
-    root->addChild(interpolatedSeperator);
 
+    string ivContent = root->getString();
+    ostringstream outputContent;
+    outputContent << "#Inventor V2.0 ascii" << endl << ivContent;
 
-    if(!debug) {
-        string ivContent = root->getString();
-        ostringstream outputContent;
-        outputContent << "#Inventor V2.0 ascii" << endl << ivContent;
+    std::cout << outputContent.str() << std::endl;
 
-        std::cout << outputContent.str() << std::endl;
-    }
 
 
     return 0;
