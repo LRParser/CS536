@@ -102,15 +102,15 @@ double fact(int k) {
 
 }
 
+point calculateNormalOrig(point point1, point point2, point point3) {
 
-
-
-point calculateNormal(point point1, point point2, point point3) {
-
-    /*
     point vec1 = point1 - point2;
     point vec2 = point1 - point3;
 
+    if(debug) {
+        cerr << "Cross of: (" << vec1.x << ", " << vec1.y << ", " << vec1.z << ")" << endl;
+        cerr << "  and of: (" << vec2.x << ", " << vec2.y << ", " << vec2.z << ")" <<  endl;
+    }
 
     point cross;
     cross.z = (vec1.x*vec2.y)-(vec2.x*vec1.y);
@@ -133,13 +133,8 @@ point calculateNormal(point point1, point point2, point point3) {
     cross.z = cross.z / pointSums;
 
     return cross;
-    */
-    point p;
-    p.x = 0;
-    p.y = 0;
-    p.z = 0;
-    return p;
 }
+
 
 double binomial(int k, int i) {
     return fact(k) / (fact(i)*fact(k-i));
@@ -180,48 +175,6 @@ public:
     point p1;
 };
 
-vector<point> getTwoClosestPoints(vector<point> vertices, point refPoint) {
-    vector<point> returnVec;
-    double eps = 1e-10;
-
-    // Find the shortest distance
-    int closestPointIndex = -1;
-    double minDist = 999999999;
-    point closestPoint;
-
-    int i = 0;
-    for(auto pt = vertices.begin(); pt != vertices.end(); pt++) {
-        point comparePoint = *pt;
-        double dist = pow(comparePoint.x-refPoint.x,2)+ pow(comparePoint.y-refPoint.y,2) +pow(comparePoint.z-refPoint.z,2);
-        if (dist < minDist && dist > eps) {
-            minDist = dist;
-            closestPoint = comparePoint;
-            closestPointIndex = i;
-        }
-        i++;
-    }
-
-    i = 0;
-    minDist = 999999999;
-    point nextClosestPoint;
-    for(auto pt = vertices.begin(); pt != vertices.end(); pt++) {
-        point comparePoint = *pt;
-        double dist = pow(comparePoint.x-refPoint.x,2)+ pow(comparePoint.y-refPoint.y,2) +pow(comparePoint.z-refPoint.z,2);
-        if (dist < minDist && i != closestPointIndex && dist > eps) {
-            minDist = dist;
-            nextClosestPoint = comparePoint;
-            closestPointIndex = i;
-        }
-        i++;
-    }
-
-    returnVec.push_back(closestPoint);
-    returnVec.push_back(nextClosestPoint);
-
-    return returnVec;
-
-}
-
 int
 main(int argc, char ** argv) {
 
@@ -233,7 +186,6 @@ main(int argc, char ** argv) {
     double B = 1.0;
     double C = 1.0;
     bool renderSpheres = false;
-    bool renderClosest = false;
     float radius = 0.1;
 
     bool shadeWithNormals = false;
@@ -296,8 +248,6 @@ main(int argc, char ** argv) {
             shadeWithNormals = true;
         } else if (std::string(argv[i]) == "-s") {
             renderSpheres = true;
-        } else if (std::string(argv[i]) == "-c") {
-            renderClosest = true;
         } else if (std::string(argv[i]) == "-d") {
             debug = true;
         }
@@ -306,9 +256,7 @@ main(int argc, char ** argv) {
     if (debug) {
         cerr << "num_u is: " << num_u;
         cerr << "num_v is: " << num_v;
-
     }
-
 
     Node *root = new Node("", "", "");
 
@@ -358,10 +306,6 @@ main(int argc, char ** argv) {
     double u = 0;
     double v = 0;
 
-    double uMax = 2 * M_PI;
-    double vMax = M_PI;
-
-    double eps = 1e-10;
 
     for(int i=0; i < num_u; i++) {
 
@@ -382,6 +326,9 @@ main(int argc, char ** argv) {
             currentPoint.y = B * c(v, s1) * s(u, s2);
             currentPoint.z = C * s(v, s1);
 
+            // Calculate normals for the point
+            point normalPoint;
+            normalPoint.x = ((double) 1 / A)
 
             if (debug) {
                 cerr << " Set interpolated point at: " << i << "," << j << " to x: " << currentPoint.x << ", y: "
@@ -480,164 +427,154 @@ main(int argc, char ** argv) {
     }
     else {
 
-        if (renderClosest) {
-            // For each point, render a triangle with the next 2 closest points
 
-            vector<point> vertexCopy;
-            for (auto it = vertices.begin(); it < vertices.end(); it++) {
-                point vertex0 = *it;
-                vertexCopy.push_back(vertex0);
-            }
+        // Tesselate
 
-            int i = 0;
-            for (auto it = vertices.begin(); it < vertices.end(); it++) {
-                point vertex0 = *it;
-                int index0 = vertexIndexMapping.at(vertex0);
+        // num_u
+        for (int i = 0; i < num_u; i++) {
+            for (int j = 0; j < num_v; j++) {
 
-                vector<point> nextTwoPoints = getTwoClosestPoints(vertexCopy, vertex0);
-                point vertex1 = nextTwoPoints.at(0);
-                int index1 = vertexIndexMapping.at(vertex1);
+                int indexiplus1 = i + 1;
+                int indexjplus1 = j + 1;
+                int indexj = j;
+                int indexi = i;
 
-                point vertex2 = nextTwoPoints.at(1);
-                int index2 = vertexIndexMapping.at(vertex2);
+                bool interpolateTopCap = false;
+                bool interpolateBottomCap = false;
+                if(j == num_v -1) {
+                    interpolateTopCap = true;
+                }
 
-                coordIndexSetVals << index2 << ", ";
-                coordIndexSetVals << index1 << ", ";
-                coordIndexSetVals << index0 << ", ";
-                coordIndexSetVals << -1 << ", " << endl;
+                if(j == 0) {
+                    interpolateBottomCap = true;
+                }
 
-                if(i < 5) {
-                    vertexCopy.erase(vertexCopy.begin() + i);
+
+                if(indexiplus1 > num_u - 1) {
+                    indexiplus1 = 0;
+                }
+                if(indexjplus1 > num_v - 1) {
+                    indexjplus1 = 0;
+                }
+
+
+                if (interpolateTopCap) {
+
+                    if (debug) {
+                        cerr << "Top cap interpolate" << endl;
+                    }
+
+                    point vertex0 = northPole;
+                    int index0 = northPoleIndex;
+
+                    point vertex1 = interpolatedPoints[indexi][indexj]; // 1
+                    int index1 = vertexIndexMapping.at(vertex1);
+
+                    point vertex2 = interpolatedPoints[indexiplus1][indexj]; // 1
+                    int index2 = vertexIndexMapping.at(vertex2);
+
+                    point vertex3 = interpolatedPoints[indexiplus1][indexjplus1]; // 3
+                    int index3 = vertexIndexMapping.at(vertex3);
+
+                    point unitVector;
+                    unitVector.x = 0;
+                    unitVector.y = 0;
+                    unitVector.z = 1;
+
+                    vertexNormalMapping[vertex0] = unitVector;
+                    //vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
+                    //vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
+                    //vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
+
+                    coordIndexSetVals << index0 << ", ";
+                    coordIndexSetVals << index1 << ", ";
+                    coordIndexSetVals << index2 << ", ";
+                    coordIndexSetVals << -1 << ", " << endl;
+
+                    if (debug) {
+                        cerr << "TopCap Indices at: " << index0 << ", " << index1 << ", " << index2 << endl;
+                    }
 
                 }
-                i++;
-            }
-
-        }
-        else {
-            // Tesselate
-
-            // num_u
-            for (int i = 0; i < num_u; i++) {
-                for (int j = 0; j < num_v; j++) {
-
-                    int indexiplus1 = i + 1;
-                    int indexjplus1 = j + 1;
-                    int indexj = j;
-                    int indexi = i;
-
-                    bool interpolateTopCap = false;
-                    bool interpolateBottomCap = false;
-                    if(j == num_v -1) {
-                        interpolateTopCap = true;
-                    }
-
-                    if(j == 0) {
-                        interpolateBottomCap = true;
+                else if(interpolateBottomCap) {
+                    if (debug) {
+                        cerr << "Bottom cap interpolate" << endl;
                     }
 
 
-                    if(indexiplus1 > num_u - 1) {
-                        indexiplus1 = 0;
+                    point vertex0 = southPole;
+                    int index0 = southPoleIndex;
+
+                    point vertex1 = interpolatedPoints[indexi][indexjplus1]; // 1
+                    int index1 = vertexIndexMapping.at(vertex1);
+
+                    point vertex2 = interpolatedPoints[indexiplus1][indexjplus1]; // 1
+                    int index2 = vertexIndexMapping.at(vertex2);
+
+                    point vertex3 = interpolatedPoints[indexiplus1][indexjplus1]; // 3
+                    int index3 = vertexIndexMapping.at(vertex3);
+
+                    point unitVector;
+                    unitVector.x = 0;
+                    unitVector.y = 0;
+                    unitVector.z = 1;
+                    vertexNormalMapping[vertex0] = unitVector;
+
+                    //vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
+                    vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
+                    vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
+                    vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
+
+                    coordIndexSetVals << index0 << ", ";
+                    coordIndexSetVals << index1 << ", ";
+                    coordIndexSetVals << index2 << ", ";
+                    coordIndexSetVals << -1 << ", " << endl;
+
+                    if (debug) {
+                        cerr << "Bottom Indices at: " << index0 << ", " << index1 << ", " << index2 << endl;
                     }
-                    if(indexjplus1 > num_v - 1) {
-                        indexjplus1 = 0;
-                    }
-
-
-                    if (interpolateTopCap) {
-
-                        if (debug) {
-                            cerr << "Top cap interpolate" << endl;
-                        }
-
-                        int index0 = northPoleIndex;
-
-                        point vertex1 = interpolatedPoints[indexi][indexj]; // 1
-                        int index1 = vertexIndexMapping.at(vertex1);
-
-                        point vertex2 = interpolatedPoints[indexiplus1][indexj]; // 1
-                        int index2 = vertexIndexMapping.at(vertex2);
-
-
-                        coordIndexSetVals << index0 << ", ";
-                        coordIndexSetVals << index1 << ", ";
-                        coordIndexSetVals << index2 << ", ";
-                        coordIndexSetVals << -1 << ", " << endl;
-
-                        if (debug) {
-                            cerr << "TopCap Indices at: " << index0 << ", " << index1 << ", " << index2 << endl;
-                        }
-
-                    }
-                    else if(interpolateBottomCap) {
-                        if (debug) {
-                            cerr << "Bottom cap interpolate" << endl;
-                        }
-
-
-                        int index0 = southPoleIndex;
-
-                        point vertex1 = interpolatedPoints[indexi][indexjplus1]; // 1
-                        int index1 = vertexIndexMapping.at(vertex1);
-
-                        point vertex2 = interpolatedPoints[indexiplus1][indexjplus1]; // 1
-                        int index2 = vertexIndexMapping.at(vertex2);
-
-
-
-                        coordIndexSetVals << index0 << ", ";
-                        coordIndexSetVals << index1 << ", ";
-                        coordIndexSetVals << index2 << ", ";
-                        coordIndexSetVals << -1 << ", " << endl;
-
-                        if (debug) {
-                            cerr << "Bottom Indices at: " << index0 << ", " << index1 << ", " << index2 << endl;
-                        }
-
-                    }
-                    else {
-                        // Four distinct points become a patch (two tesselated triangles)
-                        point vertex0 = interpolatedPoints[i][j]; // 0
-                        int index0 = vertexIndexMapping.at(vertex0);
-
-                        point vertex1 = interpolatedPoints[indexiplus1][j]; // 1
-                        int index1 = vertexIndexMapping.at(vertex1);
-
-                        point vertex2 = interpolatedPoints[i][indexjplus1]; // 2
-                        int index2 = vertexIndexMapping.at(vertex2);
-
-                        point vertex3 = interpolatedPoints[indexiplus1][indexjplus1]; // 3
-                        int index3 = vertexIndexMapping.at(vertex3);
-
-                        if (debug) {
-                            cerr << "Indices at: " << index0 << ", " << index1 << ", " << index2 << ", " << index3 << endl;
-                        }
-
-
-                        vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
-                        vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
-                        vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
-                        vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
-
-                        coordIndexSetVals << index0 << ", ";
-                        coordIndexSetVals << index1 << ", ";
-                        coordIndexSetVals << index2 << ", ";
-                        coordIndexSetVals << -1 << ", " << endl;
-
-                        coordIndexSetVals << index1 << ", ";
-                        coordIndexSetVals << index3 << ", ";
-                        coordIndexSetVals << index2 << ", ";
-                        coordIndexSetVals << -1 << ", " << endl;
-
-                    }
-
 
                 }
+                else {
+                    // Four distinct points become a patch (two tesselated triangles)
+                    point vertex0 = interpolatedPoints[i][j]; // 0
+                    int index0 = vertexIndexMapping.at(vertex0);
+
+                    point vertex1 = interpolatedPoints[indexiplus1][j]; // 1
+                    int index1 = vertexIndexMapping.at(vertex1);
+
+                    point vertex2 = interpolatedPoints[i][indexjplus1]; // 2
+                    int index2 = vertexIndexMapping.at(vertex2);
+
+                    point vertex3 = interpolatedPoints[indexiplus1][indexjplus1]; // 3
+                    int index3 = vertexIndexMapping.at(vertex3);
+
+                    if (debug) {
+                        cerr << "Indices at: " << index0 << ", " << index1 << ", " << index2 << ", " << index3 << endl;
+                    }
+
+
+                    vertexNormalMapping[vertex0] = calculateNormal(vertex0, vertex1, vertex2);
+                    vertexNormalMapping[vertex1] = calculateNormal(vertex1, vertex3, vertex2);
+                    vertexNormalMapping[vertex2] = calculateNormal(vertex2, vertex0, vertex1);
+                    vertexNormalMapping[vertex3] = calculateNormal(vertex3, vertex2, vertex1);
+
+                    coordIndexSetVals << index0 << ", ";
+                    coordIndexSetVals << index1 << ", ";
+                    coordIndexSetVals << index2 << ", ";
+                    coordIndexSetVals << -1 << ", " << endl;
+
+                    coordIndexSetVals << index1 << ", ";
+                    coordIndexSetVals << index3 << ", ";
+                    coordIndexSetVals << index2 << ", ";
+                    coordIndexSetVals << -1 << ", " << endl;
+
+                }
+
+
             }
-
-
         }
+
 
         if(debug) {
             cerr << "Serializing to OI format" << endl;
