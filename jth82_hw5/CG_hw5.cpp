@@ -200,6 +200,54 @@ int mapVertex(point p1, vector<point> & vertices, map<point,int>& vertexIndexMap
     return assignedIndex;
 }
 
+class quadresult {
+public:
+    Node* sep;
+    vector<point> vertices;
+    quadresult(Node* sep_i, vector<point> vertices_i) {
+        sep=sep_i;
+        vertices = vertices_i;
+    }
+};
+
+Node* constructQuadNode(vector<point> vertices) {
+
+
+    std::ostringstream pointVals;
+    std::ostringstream indexSetVals;
+    Node* baseSeparator = new Node("Separator {","","}");
+    pointVals << "point [" << std::endl;
+
+    for(auto pt = vertices.begin(); pt < vertices.end(); pt++) {
+        point currentPoint = *pt;
+        pointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
+    }
+
+    indexSetVals << "coordIndex [" << std::endl;
+    indexSetVals << 0 << ", " << 1 << ", " << 2 << ", " << 0 << ", " << -1 << ", " << endl;
+    indexSetVals << 0 << ", " << 2 << ", " << 3 << ", " << 0 << ", " << -1 << ", " << endl;
+    indexSetVals << 7 << ", " << 6 << ", " << 5 << ", " << 7 << ", " << -1 << ", " << endl;
+    indexSetVals << 7 << ", " << 5 << ", " << 4 << ", " << 7 << ", " << -1 << ", " << endl;
+    indexSetVals << 0 << ", " << 3 << ", " << 7 << ", " << 0 << ", " << -1 << ", " << endl;
+    indexSetVals << 0 << ", " << 7 << ", " << 4 << ", " << 0 << ", " << -1 << ", " << endl;
+    indexSetVals << 1 << ", " << 5 << ", " << 6 << ", " << 1 << ", " << -1 << ", " << endl;
+    indexSetVals << 1 << ", " << 6 << ", " << 2 << ", " << 1 << ", " << -1 << ", " << endl;
+    indexSetVals << 0 << ", " << 4 << ", " << 5 << ", " << 0 << ", " << -1 << ", " << endl;
+    indexSetVals << 0 << ", " << 5 << ", " << 1 << ", " << 0 << ", " << -1 << ", " << endl;
+    indexSetVals << 3 << ", " << 2 << ", " << 6 << ", " << 3 << ", " << -1 << ", " << endl;
+    indexSetVals << 3 << ", " << 6 << ", " << 7 << ", " << 3 << ", " << -1 << ", " << endl;
+
+    pointVals << "]" << std::endl;
+    indexSetVals << "]" << std::endl;
+
+    Node* basePoints = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
+    Node* baseFaces = new Node("IndexedFaceSet {",indexSetVals.str(),"}"); // SoIndexedLineSet
+
+    baseSeparator->addChild(basePoints);
+    baseSeparator->addChild(baseFaces);
+    return baseSeparator;
+}
+
 int
 main(int argc, char ** argv) {
 
@@ -266,7 +314,7 @@ main(int argc, char ** argv) {
     }
 
     Node *root = new Node("", "", "");
-    vector<point> baseVertices;
+
 
     // Nodes for the base
 
@@ -279,56 +327,24 @@ main(int argc, char ** argv) {
     point p6(-2.000000, -2.000000, 0.000000);
     point p7(2.000000, -2.000000, 0.000000);
 
-    int index0 = mapVertex(p0,baseVertices,vertexIndexMapping,indexVertexMapping);
-    int index1 = mapVertex(p1,baseVertices,vertexIndexMapping,indexVertexMapping);
-    int index2 = mapVertex(p2,baseVertices,vertexIndexMapping,indexVertexMapping);
-    int index3 = mapVertex(p3,baseVertices,vertexIndexMapping,indexVertexMapping);
-    int index4 = mapVertex(p4,baseVertices,vertexIndexMapping,indexVertexMapping);
-    int index5 = mapVertex(p5,baseVertices,vertexIndexMapping,indexVertexMapping);
-    int index6 = mapVertex(p6,baseVertices,vertexIndexMapping,indexVertexMapping);
-    int index7 = mapVertex(p7,baseVertices,vertexIndexMapping,indexVertexMapping);
-    vTexIndex = 0;
+    vector<point> baseVertices;
 
-    std::ostringstream basePointVals;
-    std::ostringstream baseIndexSetVals;
-    Node* baseSeparator = new Node("Separator {","","}");
-    basePointVals << "point [" << std::endl;
+    baseVertices.push_back(p0);
+    baseVertices.push_back(p1);
+    baseVertices.push_back(p2);
+    baseVertices.push_back(p3);
+    baseVertices.push_back(p4);
+    baseVertices.push_back(p5);
+    baseVertices.push_back(p6);
+    baseVertices.push_back(p7);
 
-    for(auto pt = baseVertices.begin(); pt < baseVertices.end(); pt++) {
-        point currentPoint = *pt;
-        basePointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
-    }
-
-    baseIndexSetVals << "coordIndex [" << std::endl;
-    baseIndexSetVals << index0 << ", " << index1 << ", " << index2 << ", " << index0 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index0 << ", " << index2 << ", " << index3 << ", " << index0 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index7 << ", " << index6 << ", " << index5 << ", " << index7 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index7 << ", " << index5 << ", " << index4 << ", " << index7 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index0 << ", " << index3 << ", " << index7 << ", " << index0 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index0 << ", " << index7 << ", " << index4 << ", " << index0 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index1 << ", " << index5 << ", " << index6 << ", " << index1 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index1 << ", " << index6 << ", " << index2 << ", " << index1 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index0 << ", " << index4 << ", " << index5 << ", " << index0 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index0 << ", " << index5 << ", " << index1 << ", " << index0 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index3 << ", " << index2 << ", " << index6 << ", " << index3 << ", " << -1 << ", " << endl;
-    baseIndexSetVals << index3 << ", " << index6 << ", " << index7 << ", " << index3 << ", " << -1 << ", " << endl;
-
-    basePointVals << "]" << std::endl;
-    baseIndexSetVals << "]" << std::endl;
-
-    Node* basePoints = new Node("Coordinate3 {",basePointVals.str(),"}"); // SoCoordinate3
-    Node* baseFaces = new Node("IndexedFaceSet {",baseIndexSetVals.str(),"}"); // SoIndexedLineSet
-
-    baseSeparator->addChild(basePoints);
-    baseSeparator->addChild(baseFaces);
+    Node* baseSeparator = constructQuadNode(baseVertices);
     root->addChild(baseSeparator);
 
 
     // Nodes for link 1
-    std::ostringstream link1PointVals;
-    std::ostringstream link1IndexSetVals;
+\
     vector<point> link1Vertices;
-    Node* link1Separator = new Node("Separator {","","}");
 
     point p8(0.703233, -0.073913, 5.000000);
     point p9(0.073913, 0.703233, 5.000000);
@@ -339,47 +355,42 @@ main(int argc, char ** argv) {
     point p14(-0.703233, 0.073913, 1.000000);
     point p15(-0.073913, -0.703233, 1.000000);
 
-    int index8 = mapVertex(p8,link1Vertices,vertexIndexMapping,indexVertexMapping);
-    int index9 = mapVertex(p9,link1Vertices,vertexIndexMapping,indexVertexMapping);
-    int index10 = mapVertex(p10,link1Vertices,vertexIndexMapping,indexVertexMapping);
-    int index11 = mapVertex(p11,link1Vertices,vertexIndexMapping,indexVertexMapping);
-    int index12 = mapVertex(p12,link1Vertices,vertexIndexMapping,indexVertexMapping);
-    int index13 = mapVertex(p13,link1Vertices,vertexIndexMapping,indexVertexMapping);
-    int index14 = mapVertex(p14,link1Vertices,vertexIndexMapping,indexVertexMapping);
-    int index15 = mapVertex(p15,link1Vertices,vertexIndexMapping,indexVertexMapping);
+    link1Vertices.push_back(p8);
+    link1Vertices.push_back(p9);
+    link1Vertices.push_back(p10);
+    link1Vertices.push_back(p11);
+    link1Vertices.push_back(p12);
+    link1Vertices.push_back(p13);
+    link1Vertices.push_back(p14);
+    link1Vertices.push_back(p15);
 
-    link1PointVals << "point [" << std::endl;
-    for(auto pt = link1Vertices.begin(); pt < link1Vertices.end(); pt++) {
-        point currentPoint = *pt;
-        link1PointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
-    }
-
-    link1PointVals << "]" << std::endl;
-
-
-    link1IndexSetVals << "coordIndex [" << std::endl;
-    link1IndexSetVals << index8 << ", " << index9 << ", " << index10 << ", " << index8 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index8 << ", " << index10 << ", " << index11 << ", " << index8 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index15 << ", " << index14 << ", " << index13 << ", " << index15 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index15 << ", " << index13 << ", " << index12 << ", " << index15 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index8 << ", " << index11 << ", " << index15 << ", " << index8 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index8 << ", " << index15 << ", " << index12 << ", " << index8 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index9 << ", " << index13 << ", " << index14 << ", " << index9 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index9 << ", " << index14 << ", " << index10 << ", " << index9 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index8 << ", " << index12 << ", " << index13 << ", " << index8 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index8 << ", " << index13 << ", " << index9 << ", " << index8 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index11 << ", " << index10 << ", " << index14 << ", " << index11 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << index11 << ", " << index14 << ", " << index15 << ", " << index11 << ", " << -1 << ", " << endl;
-    link1IndexSetVals << "]" << std::endl;
-
-    Node* link1Points = new Node("Coordinate3 {",link1PointVals.str(),"}"); // SoCoordinate3
-    Node* link1Faces = new Node("IndexedFaceSet {",link1IndexSetVals.str(),"}"); // SoIndexedLineSet
-
-    link1Separator->addChild(link1Points);
-    link1Separator->addChild(link1Faces);
+    Node* link1Separator = constructQuadNode(link1Vertices);
     root->addChild(link1Separator);
 
     // Nodes for link 2
+
+    vector<point> link2Vertices;
+
+    point p16(1.821242, -1.454539, 7.016778);
+    point p17(1.332169, -0.850583, 7.646098);
+    point p18(0.555023, -1.479904, 7.646098);
+    point p19(1.044096, -2.083860, 7.016778);
+    point p20(0.633110, 0.012682, 4.685340);
+    point p21(0.144036, 0.616638, 5.314660);
+    point p22(-0.633110, -0.012682, 5.314660);
+    point p23(-0.144036, -0.616638, 4.685340);
+
+    link2Vertices.push_back(p16);
+    link2Vertices.push_back(p17);
+    link2Vertices.push_back(p18);
+    link2Vertices.push_back(p19);
+    link2Vertices.push_back(p20);
+    link2Vertices.push_back(p21);
+    link2Vertices.push_back(p22);
+    link2Vertices.push_back(p23);
+
+    Node* link2Separator = constructQuadNode(link2Vertices);
+    root->addChild(link2Separator);
 
     // Nodes for link 3
 
