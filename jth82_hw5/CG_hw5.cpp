@@ -265,9 +265,6 @@ main(int argc, char ** argv) {
         }
     }
 
-    vector<point> normals;
-    vector<point> vertices;
-
     Node *root = new Node("", "", "");
     vector<point> baseVertices;
 
@@ -282,40 +279,109 @@ main(int argc, char ** argv) {
     point p6(-2.000000, -2.000000, 0.000000);
     point p7(2.000000, -2.000000, 0.000000);
 
+    int index0 = mapVertex(p0,baseVertices,vertexIndexMapping,indexVertexMapping);
+    int index1 = mapVertex(p1,baseVertices,vertexIndexMapping,indexVertexMapping);
+    int index2 = mapVertex(p2,baseVertices,vertexIndexMapping,indexVertexMapping);
+    int index3 = mapVertex(p3,baseVertices,vertexIndexMapping,indexVertexMapping);
+    int index4 = mapVertex(p4,baseVertices,vertexIndexMapping,indexVertexMapping);
+    int index5 = mapVertex(p5,baseVertices,vertexIndexMapping,indexVertexMapping);
+    int index6 = mapVertex(p6,baseVertices,vertexIndexMapping,indexVertexMapping);
+    int index7 = mapVertex(p7,baseVertices,vertexIndexMapping,indexVertexMapping);
+    vTexIndex = 0;
 
-    int index0 = mapVertex(p0,vertices,vertexIndexMapping,indexVertexMapping);
-    int index1 = mapVertex(p1,vertices,vertexIndexMapping,indexVertexMapping);
-    int index2 = mapVertex(p2,vertices,vertexIndexMapping,indexVertexMapping);
-    int index3 = mapVertex(p3,vertices,vertexIndexMapping,indexVertexMapping);
-    int index4 = mapVertex(p4,vertices,vertexIndexMapping,indexVertexMapping);
-    int index5 = mapVertex(p5,vertices,vertexIndexMapping,indexVertexMapping);
-    int index6 = mapVertex(p6,vertices,vertexIndexMapping,indexVertexMapping);
-    int index7 = mapVertex(p7,vertices,vertexIndexMapping,indexVertexMapping);
+    std::ostringstream basePointVals;
+    std::ostringstream baseIndexSetVals;
+    Node* baseSeparator = new Node("Separator {","","}");
+    basePointVals << "point [" << std::endl;
 
-    std::ostringstream pointVals;
-    std::ostringstream coordIndexSetVals;
-
-    pointVals << "point [" << std::endl;
-
-    for(auto pt = vertices.begin(); pt < vertices.end(); pt++) {
+    for(auto pt = baseVertices.begin(); pt < baseVertices.end(); pt++) {
         point currentPoint = *pt;
-        pointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
-
+        basePointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
     }
 
-    coordIndexSetVals << "coordIndex [" << std::endl;
-    coordIndexSetVals << index0 << ", " << index1 << ", " << index2 << ", " << index0 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index0 << ", " << index2 << ", " << index3 << ", " << index0 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index7 << ", " << index6 << ", " << index5 << ", " << index7 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index7 << ", " << index5 << ", " << index4 << ", " << index7 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index0 << ", " << index3 << ", " << index7 << ", " << index0 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index0 << ", " << index7 << ", " << index4 << ", " << index0 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index1 << ", " << index5 << ", " << index6 << ", " << index1 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index1 << ", " << index6 << ", " << index2 << ", " << index1 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index0 << ", " << index4 << ", " << index5 << ", " << index0 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index0 << ", " << index5 << ", " << index1 << ", " << index0 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index3 << ", " << index2 << ", " << index6 << ", " << index3 << ", " << -1 << ", " << endl;;
-    coordIndexSetVals << index3 << ", " << index6 << ", " << index7 << ", " << index3 << ", " << -1 << ", " << endl;;
+    baseIndexSetVals << "coordIndex [" << std::endl;
+    baseIndexSetVals << index0 << ", " << index1 << ", " << index2 << ", " << index0 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index0 << ", " << index2 << ", " << index3 << ", " << index0 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index7 << ", " << index6 << ", " << index5 << ", " << index7 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index7 << ", " << index5 << ", " << index4 << ", " << index7 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index0 << ", " << index3 << ", " << index7 << ", " << index0 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index0 << ", " << index7 << ", " << index4 << ", " << index0 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index1 << ", " << index5 << ", " << index6 << ", " << index1 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index1 << ", " << index6 << ", " << index2 << ", " << index1 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index0 << ", " << index4 << ", " << index5 << ", " << index0 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index0 << ", " << index5 << ", " << index1 << ", " << index0 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index3 << ", " << index2 << ", " << index6 << ", " << index3 << ", " << -1 << ", " << endl;
+    baseIndexSetVals << index3 << ", " << index6 << ", " << index7 << ", " << index3 << ", " << -1 << ", " << endl;
+
+    basePointVals << "]" << std::endl;
+    baseIndexSetVals << "]" << std::endl;
+
+    Node* basePoints = new Node("Coordinate3 {",basePointVals.str(),"}"); // SoCoordinate3
+    Node* baseFaces = new Node("IndexedFaceSet {",baseIndexSetVals.str(),"}"); // SoIndexedLineSet
+
+    baseSeparator->addChild(basePoints);
+    baseSeparator->addChild(baseFaces);
+    root->addChild(baseSeparator);
+
+
+    // Nodes for link 1
+    std::ostringstream link1PointVals;
+    std::ostringstream link1IndexSetVals;
+    vector<point> link1Vertices;
+    Node* link1Separator = new Node("Separator {","","}");
+
+    point p8(0.703233, -0.073913, 5.000000);
+    point p9(0.073913, 0.703233, 5.000000);
+    point p10(-0.703233, 0.073913, 5.000000);
+    point p11(-0.073913, -0.703233, 5.000000);
+    point p12(0.703233, -0.073913, 1.000000);
+    point p13(0.073913, 0.703233, 1.000000);
+    point p14(-0.703233, 0.073913, 1.000000);
+    point p15(-0.073913, -0.703233, 1.000000);
+
+    int index8 = mapVertex(p8,link1Vertices,vertexIndexMapping,indexVertexMapping);
+    int index9 = mapVertex(p9,link1Vertices,vertexIndexMapping,indexVertexMapping);
+    int index10 = mapVertex(p10,link1Vertices,vertexIndexMapping,indexVertexMapping);
+    int index11 = mapVertex(p11,link1Vertices,vertexIndexMapping,indexVertexMapping);
+    int index12 = mapVertex(p12,link1Vertices,vertexIndexMapping,indexVertexMapping);
+    int index13 = mapVertex(p13,link1Vertices,vertexIndexMapping,indexVertexMapping);
+    int index14 = mapVertex(p14,link1Vertices,vertexIndexMapping,indexVertexMapping);
+    int index15 = mapVertex(p15,link1Vertices,vertexIndexMapping,indexVertexMapping);
+
+    link1PointVals << "point [" << std::endl;
+    for(auto pt = link1Vertices.begin(); pt < link1Vertices.end(); pt++) {
+        point currentPoint = *pt;
+        link1PointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
+    }
+
+    link1PointVals << "]" << std::endl;
+
+
+    link1IndexSetVals << "coordIndex [" << std::endl;
+    link1IndexSetVals << index8 << ", " << index9 << ", " << index10 << ", " << index8 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index8 << ", " << index10 << ", " << index11 << ", " << index8 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index15 << ", " << index14 << ", " << index13 << ", " << index15 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index15 << ", " << index13 << ", " << index12 << ", " << index15 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index8 << ", " << index11 << ", " << index15 << ", " << index8 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index8 << ", " << index15 << ", " << index12 << ", " << index8 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index9 << ", " << index13 << ", " << index14 << ", " << index9 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index9 << ", " << index14 << ", " << index10 << ", " << index9 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index8 << ", " << index12 << ", " << index13 << ", " << index8 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index8 << ", " << index13 << ", " << index9 << ", " << index8 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index11 << ", " << index10 << ", " << index14 << ", " << index11 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << index11 << ", " << index14 << ", " << index15 << ", " << index11 << ", " << -1 << ", " << endl;
+    link1IndexSetVals << "]" << std::endl;
+
+    Node* link1Points = new Node("Coordinate3 {",link1PointVals.str(),"}"); // SoCoordinate3
+    Node* link1Faces = new Node("IndexedFaceSet {",link1IndexSetVals.str(),"}"); // SoIndexedLineSet
+
+    link1Separator->addChild(link1Points);
+    link1Separator->addChild(link1Faces);
+    root->addChild(link1Separator);
+
+    // Nodes for link 2
+
+    // Nodes for link 3
 
 
     if(debug) {
@@ -323,23 +389,12 @@ main(int argc, char ** argv) {
     }
 
 
-    pointVals << "]" << std::endl;
-    coordIndexSetVals << "]" << std::endl;
 
     Node* shapeHints = new Node("ShapeHints {","vertexOrdering        COUNTERCLOCKWISE\n","}");
     root->addChild(shapeHints);
 
-    Node* interpolatedSeperator = new Node("Separator {","","}");
-
-    Node* interpolatedPointsNode = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
-
-    Node* indexedFaceSet = new Node("IndexedFaceSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
-
-    interpolatedSeperator->addChild(interpolatedPointsNode);
 
 
-    interpolatedSeperator->addChild(indexedFaceSet);
-    root->addChild(interpolatedSeperator);
 
     string ivContent = root->getString();
     ostringstream outputContent;
