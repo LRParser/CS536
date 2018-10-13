@@ -393,6 +393,28 @@ main(int argc, char ** argv) {
     root->addChild(link2Separator);
 
     // Nodes for link 3
+    vector<point> link3Vertices;
+
+    point p24(3.027149, -2.943710, 6.241485);
+    point p25(3.179396, -3.131719, 7.211781);
+    point p26(2.402250, -3.761039, 7.211781);
+    point p27(2.250004, -3.573031, 6.241485);
+    point p28(1.500582, -1.058557, 6.846290);
+    point p29(1.652829, -1.246566, 7.816586);
+    point p30(0.875683, -1.875886, 7.816586);
+    point p31(0.723436, -1.687877, 6.846290);
+
+    link3Vertices.push_back(p24);
+    link3Vertices.push_back(p25);
+    link3Vertices.push_back(p26);
+    link3Vertices.push_back(p27);
+    link3Vertices.push_back(p28);
+    link3Vertices.push_back(p29);
+    link3Vertices.push_back(p30);
+    link3Vertices.push_back(p31);
+
+    Node* link3Separator = constructQuadNode(link3Vertices);
+    root->addChild(link3Separator);
 
 
     if(debug) {
