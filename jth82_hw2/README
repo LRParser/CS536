@@ -3,6 +3,13 @@ Prof. Breen
 
 Assignment 
 
-My program supports interpolating/drawing a 3D Catmull-Rom spline based on an arbitrary number of control points given in Hermite form. The program interprets the control points file (specified using the -f argument) as giving on the first line the derivative at the first control point, then N control points, and in the final line the derivative at the last control point. In this way the Hermite representation can be converted to Bezier form, and then we again approximate the curve with a polyline. 
+My program supports interpolating/drawing a 3D Catmull-Rom spline based on an arbitrary number of control points given in Hermite form.
+The program interprets the control points file (specified using the -f argument) as giving on the first line the derivative at
+the first control point, on the next line the derivative at the last control point, and then additional control points.
 
-The program is written in C++ on Ubuntu 16.04, using the g++ compiler. The main() function is contained in CG_HW1.cpp. The class Node.cpp implements a simple means of "writing out" the created graphics objects in Open Inventor format.
+In this way the Hermite representation can be converted to Bezier form, and then we again approximate the curve with a polyline.
+We can calculate ourselves intermediate tangent vectors from the given control points (except for the first and last tangents,
+which are given in the input file).
+
+The program is written in C++ on Ubuntu 16.04, using the g++ compiler. The main() function is contained in CG_hw2.cpp.
+The class Node.cpp implements a simple means of "writing out" the created graphics objects in Open Inventor format.
