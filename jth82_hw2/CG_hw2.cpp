@@ -18,8 +18,6 @@
 
 using namespace std;
 
-bool debug = false;
-
 struct point {
     double x;
     double y;
@@ -90,6 +88,8 @@ main(int argc, char ** argv)
     string fName;
     float du = 0.09;
     float radius = 0.1;
+    float tension = 0.0;
+    bool debug = false;
 
     for(int i=0; i < argc; i++) {
         if (std::string(argv[i]) == "-f") {
@@ -110,6 +110,15 @@ main(int argc, char ** argv)
                 std::cerr << "Must provide du value after -u argument" << std::endl;
             }
         }
+        else if (std::string(argv[i]) == "-t") {
+
+            if (i + 1 < argc) {
+                tension = std::stof(std::string(argv[i + 1]));
+            }
+            else {
+                std::cerr << "Must provide tension value after -t argument" << std::endl;
+            }
+        }
         else if (std::string(argv[i]) == "-r") {
 
             if (i + 1 < argc) {
@@ -119,6 +128,9 @@ main(int argc, char ** argv)
                 std::cerr << "Must provide radius value after -r argument" << std::endl;
             }
         }
+        else if(std::string(argv[i]) == "-d") {
+            debug = true;
+        }
     }
 
     if (fName.empty()) {
@@ -126,7 +138,8 @@ main(int argc, char ** argv)
     }
 
     if (debug) {
-        std::cout << "Reading from file: " << fName << std::endl;
+        cerr << "Reading from file: " << fName << endl;
+        cerr << "Tension is: " << tension << endl;
     }
     std::ifstream input(fName.c_str());
     if (input.fail()) {
@@ -138,10 +151,11 @@ main(int argc, char ** argv)
 
     string currentLine;
     int i = 0;
+    // We assume the first two entries give the first and last tangents, respectively
     while(std::getline(input, currentLine)) {
 
         if(debug) {
-            std::cout << currentLine << std::endl;
+            cerr << currentLine << std::endl;
         }
         point point1;
         std::istringstream ss(currentLine);
@@ -162,12 +176,12 @@ main(int argc, char ** argv)
         i = i + 1;
 
         if (debug) {
-            std::cout << "Parsed: " << point1.x << " " << point1.y << " " << point1.z << std::endl;
+            cerr << "Parsed: " << point1.x << " " << point1.y << " " << point1.z << std::endl;
         }
     }
 
     if (debug) {
-        std::cout << "Done" << std::endl;
+        cerr << "Done" << std::endl;
     }
 
     // Convert the tangents and points (which are in Hermite form) into Bezier form
@@ -190,24 +204,24 @@ main(int argc, char ** argv)
             point t1;
 
             if (i == 0) {
-                t0 = tangent0;
+                t0 = tangent0*(1-tension);
             }
             else {
                 point pkminus1 = parsedPoints.at(i-1);
-                t0 = (pkplus1-pkminus1)*0.5;
+                t0 = (pkplus1-pkminus1)*0.5*(1-tension);
             }
 
             if (i + 2 == parsedLen) {
-                t1 = tangent1;
+                t1 = tangent1*(1-tension);
             }
             else {
                 point pkplus2 = parsedPoints.at(i+2);
-                t1 = (pkplus2-pk)*0.5;
+                t1 = (pkplus2-pk)*0.5*(1-tension);
             }
 
             points.push_back(pk);
-            points.push_back(pk + (t0*(1/3.0)));
-            points.push_back(pkplus1 - (t1*(1/3.0)));
+            points.push_back(pk + (t0*(1.0/3.0)));
+            points.push_back(pkplus1 - (t1*(1.0/3.0)));
             points.push_back(pkplus1);
 
         }
@@ -226,45 +240,38 @@ main(int argc, char ** argv)
 
         vector<point> points = *cIt;
 
+        int num_u = (int)round(1.0/du) + 1;
         float u = 0.0;
         int k = (int) points.size() - 1;
 
         if(debug) {
-            cout << "Number of points is: " << k << endl;
+            cerr << "Number of points is: " << k << endl;
         }
 
-        bool interpolatedEnd = false;
-        while(u <= 1.0 && !interpolatedEnd) {
+        for(int i = 0; i < num_u; i++) {
 
-        point currentPoint;
-        currentPoint.x = 0.0;
-        currentPoint.y = 0.0;
-        currentPoint.z = 0.0;
+            point currentPoint;
+            currentPoint.x = 0.0;
+            currentPoint.y = 0.0;
+            currentPoint.z = 0.0;
 
-        for(int i = 0; i <= k; i++) {
-            point controlPoint = points.at(i);
+            for(int j = 0; j <= k; j++) {
+                point controlPoint = points.at(j);
 
-            double factor = kchoosei(k, i) * pow(1-u,k-i) * pow(u,i);
-            if(debug) {
-                cout << "     i is: " << i << " factor is: " << factor << endl;
+                double factor = kchoosei(k, j) * pow(1-u,k-j) * pow(u,j);
+                if(debug) {
+                    cerr << "     i is: " << i << " factor is: " << factor << endl;
+                }
+
+                point calcPoint = pointMult(factor,controlPoint);
+                currentPoint = pointAdd(currentPoint,calcPoint);
+
             }
 
-            point calcPoint = pointMult(factor,controlPoint);
-            currentPoint = pointAdd(currentPoint,calcPoint);
+            calcPoints.push_back(currentPoint);
 
-        }
-
-        calcPoints.push_back(currentPoint);
-
-        if (u == 1.0) {
-            interpolatedEnd = true;
-        }
-        if (u + du > 1 && !interpolatedEnd) {
-            u = 1.0;
-        }
-        else {
             u += du;
-        }
+
     }
 
     }
@@ -290,6 +297,13 @@ main(int argc, char ** argv)
 
     Node* interpolatedSeperator = new Node("Separator {","","}");
 
+    Node* lightModel = new Node("LightModel {","model BASE_COLOR\n","}");
+    Node* material = new Node("Material {","diffuseColor 1.0 1.0 0.2\n","}");
+
+    interpolatedSeperator->addChild(lightModel);
+    interpolatedSeperator->addChild(material);
+
+
     Node* interpolatedPoints = new Node("Coordinate3 {",pointVals.str(),"}"); // SoCoordinate3
     Node* indexedLineSet = new Node("IndexedLineSet {",coordIndexSetVals.str(),"}"); // SoIndexedLineSet
 
@@ -307,7 +321,7 @@ main(int argc, char ** argv)
         double z = it->z;
 
         if(debug) {
-            std::cout << "Placing: " << x << " " << y << " " << z << std::endl;
+            std::cerr << "Placing: " << x << " " << y << " " << z << std::endl;
         }
 
         std::ostringstream transformStr;

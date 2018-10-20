@@ -84,34 +84,6 @@ Material {
         diffuseColor 1.0 1.0 1.0 
 }
 Transform {
-        translation 1.33333 0 1.33333
-}
-Sphere {
-        radius  0.05 
-}
-}
-Separator {
-LightModel {
-model PHONG
-}
-Material {
-        diffuseColor 1.0 1.0 1.0 
-}
-Transform {
-        translation 3.66667 0 1.33333
-}
-Sphere {
-        radius  0.05 
-}
-}
-Separator {
-LightModel {
-model PHONG
-}
-Material {
-        diffuseColor 1.0 1.0 1.0 
-}
-Transform {
         translation 5 0 0
 }
 Sphere {
