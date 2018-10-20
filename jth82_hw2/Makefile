@@ -29,6 +29,12 @@ run0a: all
 run0b: all
 	./CG_hw2 -f HW2_test0.txt -u 0.025 -r 0.05 -t -0.5 -d > out.iv && ivview out.iv
 
+run2: all
+	./CG_hw2 -f HW2_test2.txt -u 0.0303 -r 0.1 -t 0 -d > out.iv && ivview out.iv
+
+run5b: all
+	./CG_hw2 -f cpts_test5.txt -u 0.02 -r 0.075 -t -2 -d > out.iv && ivview out.iv
+
 
 run: all
 	./CG_hw2 -f cpts_test3.txt -u 0.0303 -r 0.1 > out.iv && ivview out.iv
