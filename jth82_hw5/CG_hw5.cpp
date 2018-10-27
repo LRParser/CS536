@@ -223,6 +223,7 @@ Node* constructQuadNode(vector<point> vertices) {
         pointVals << currentPoint.x << " " << currentPoint.y << " " << currentPoint.z << "," << std::endl;
     }
 
+    // For the 6 faces in a quad we have 12 triangles, as shown below
     indexSetVals << "coordIndex [" << std::endl;
     indexSetVals << 0 << ", " << 1 << ", " << 2 << ", " << 0 << ", " << -1 << ", " << endl;
     indexSetVals << 0 << ", " << 2 << ", " << 3 << ", " << 0 << ", " << -1 << ", " << endl;
@@ -248,15 +249,49 @@ Node* constructQuadNode(vector<point> vertices) {
     return baseSeparator;
 }
 
+point rotateVector(point lhs, vector<vector<double>> matrix) {
+    point retval;
+    retval.x = lhs.x * matrix[0][0] + lhs.y * matrix[1][0] + lhs.z * matrix[2][0];
+    retval.y = lhs.x * matrix[0][1] + lhs.y * matrix[1][1] + lhs.z * matrix[2][1];
+    retval.z = lhs.x * matrix[0][2] + lhs.y * matrix[1][2] + lhs.z * matrix[2][2];
+    return retval;
+}
+
+vector<point> drawQuad(point ll, point ur) {
+    vector<point> returnVec;
+
+    point p0(ur.x, ur.y, ur.z); // point p0(2.000000,2.000000,1.000000); // upper right
+    point p1(ll.x, ur.y, ur.z);
+    point p2(ll.x, ll.y, ur.z);
+    point p3(ur.x, ll.y, ur.z);
+    point p4(ur.x, ur.y, ll.z);
+    point p5(ll.x, ur.y, ll.z);
+    point p6(ll.x, ll.y, ll.z); // point p6(-2.000000, -2.000000, 0.000000); // lower left
+    point p7(ur.x, ll.y, ll.z);
+
+
+    returnVec.push_back(p0);
+    returnVec.push_back(p1);
+    returnVec.push_back(p2);
+    returnVec.push_back(p3);
+    returnVec.push_back(p4);
+    returnVec.push_back(p5);
+    returnVec.push_back(p6);
+    returnVec.push_back(p7);
+
+    return returnVec;
+
+}
+
 int
 main(int argc, char ** argv) {
 
     double theta1 = -51.0;
     double theta2 = 39.0;
     double theta3 = 65.0;
-    double link1 = 4.0;
-    double link2 = 3.0;
-    double link3 = 2.5;
+    double link1Length = 4.0;
+    double link2Length = 3.0;
+    double link3Length = 2.5;
     bool debug = false;
     map<point,int> vertexIndexMapping;
     map<int,point> indexVertexMapping;
@@ -289,21 +324,21 @@ main(int argc, char ** argv) {
         } else if (std::string(argv[i]) == "-l") {
 
             if (i + 1 < argc) {
-                link1 = std::stod(std::string(argv[i + 1]));
+                link1Length = std::stod(std::string(argv[i + 1]));
             } else {
                 std::cerr << "Must provide r value after -r argument" << std::endl;
             }
         } else if (std::string(argv[i]) == "-m") {
 
             if (i + 1 < argc) {
-                link2 = std::stod(std::string(argv[i + 1]));
+                link2Length = std::stod(std::string(argv[i + 1]));
             } else {
                 std::cerr << "Must provide A value after -A argument" << std::endl;
             }
         } else if (std::string(argv[i]) == "-n") {
 
             if (i + 1 < argc) {
-                link3 = std::stod(std::string(argv[i + 1]));
+                link3Length = std::stod(std::string(argv[i + 1]));
             } else {
                 std::cerr << "Must provide radius value after -B argument" << std::endl;
             }
@@ -315,8 +350,63 @@ main(int argc, char ** argv) {
 
     Node *root = new Node("", "", "");
 
+    float zTranslation = 0.0;
 
-    // Nodes for the base
+    // Draw base
+    point baseLL(-2,-2,0);
+    point baseUR(2,2,1);
+    vector<point> baseVertices = drawQuad(baseLL, baseUR);
+    Node* baseSeparator = constructQuadNode(baseVertices);
+    root->addChild(baseSeparator);
+    zTranslation += 1;
+
+    // Draw link 1
+    point l1LL(-.5,-.5,0 + zTranslation);
+    point l1UR(.5,.5,link1Length + zTranslation);
+    vector<point> link1Vertices = drawQuad(l1LL, l1UR);
+    Node* link1Separator = constructQuadNode(link1Vertices);
+    root->addChild(link1Separator);
+    zTranslation += link1Length;
+
+    // Draw link 2
+    float l2 = 3.0;
+    // Now to apply a rotation, create rotation matrix
+    vector<double> row1;
+    row1.push_back(cos(theta2));
+    row1.push_back(0);
+    row1.push_back(sin(theta2));
+
+    vector<double> row2;
+    row2.push_back(0);
+    row2.push_back(1);
+    row2.push_back(0);
+
+    vector<double> row3;
+    row3.push_back(-1 * sin(theta2));
+    row3.push_back(0);
+    row3.push_back(cos(theta2));
+
+    vector<vector<double>> rotationMatrixLink2;
+    rotationMatrixLink2.push_back(row1);
+    rotationMatrixLink2.push_back(row2);
+    rotationMatrixLink2.push_back(row3);
+
+
+    point l2LL(-.5,-.5,0 + zTranslation);
+    point l2UR(.5,.5,l2 + zTranslation);
+
+    point l2LLRotated = rotateVector(l2LL,rotationMatrixLink2);
+    point l2URRotated = rotateVector(l2UR,rotationMatrixLink2);
+
+    vector<point> link2Vertices = drawQuad(l2LLRotated, l2URRotated);
+    
+
+    Node* link2Separator = constructQuadNode(link2Vertices);
+    root->addChild(link2Separator);
+    zTranslation += l2;
+    /*
+
+    // Old method for base
 
     point p0(2.000000,2.000000,1.000000); // upper right
     point p1(-2.000000, 2.000000, 1.000000);
@@ -338,12 +428,8 @@ main(int argc, char ** argv) {
     baseVertices.push_back(p6);
     baseVertices.push_back(p7);
 
-    Node* baseSeparator = constructQuadNode(baseVertices);
-    root->addChild(baseSeparator);
-
-
     // Nodes for link 1
-\
+
     vector<point> link1Vertices;
 
     point p8(0.703233, -0.073913, 5.000000);
@@ -415,7 +501,7 @@ main(int argc, char ** argv) {
 
     Node* link3Separator = constructQuadNode(link3Vertices);
     root->addChild(link3Separator);
-
+    */
 
     if(debug) {
         cerr << "Serializing to OI format" << endl;
