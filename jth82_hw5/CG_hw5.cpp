@@ -261,36 +261,17 @@ double to_radians(double degree) {
     return degree * (M_PI/180.0);
 }
 
-vector<point> translateZ(vector<point> inputPoints, double zOffset) {
-    vector<point> returnPoints;
-    for(auto it = inputPoints.begin(); it < inputPoints.end(); it++) {
-        point p = *it;
-        p.z += zOffset;
-        returnPoints.push_back(p);
-    }
-    return returnPoints;
-}
-
-vector<point> translateY(vector<point> inputPoints, double yOffset) {
-    vector<point> returnPoints;
-    for(auto it = inputPoints.begin(); it < inputPoints.end(); it++) {
-        point p = *it;
-        p.y += yOffset;
-        returnPoints.push_back(p);
-    }
-    return returnPoints;
-}
 
 vector<point> drawQuad(point ll, point ur) {
     vector<point> returnVec;
 
-    point p0(ur.x, ur.y, ur.z); // point p0(2.000000,2.000000,1.000000); // upper right
+    point p0(ur.x, ur.y, ur.z); // upper right
     point p1(ll.x, ur.y, ur.z);
     point p2(ll.x, ll.y, ur.z);
     point p3(ur.x, ll.y, ur.z);
     point p4(ur.x, ur.y, ll.z);
     point p5(ll.x, ur.y, ll.z);
-    point p6(ll.x, ll.y, ll.z); // point p6(-2.000000, -2.000000, 0.000000); // lower left
+    point p6(ll.x, ll.y, ll.z); // lower left
     point p7(ur.x, ll.y, ll.z);
 
 
@@ -485,7 +466,6 @@ main(int argc, char ** argv) {
 
     Node *root = new Node("", "", "");
 
-    float zTranslation = 0.0;
     double baseHeight = 1.0;
 
     // Draw base
