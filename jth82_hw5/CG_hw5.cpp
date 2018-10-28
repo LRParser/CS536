@@ -249,12 +249,26 @@ Node* constructQuadNode(vector<point> vertices) {
     return baseSeparator;
 }
 
-point rotateVector(point lhs, vector<vector<double>> matrix) {
+point rotateVector(vector<vector<double>> matrix, point rhs) {
     point retval;
-    retval.x = lhs.x * matrix[0][0] + lhs.y * matrix[1][0] + lhs.z * matrix[2][0];
-    retval.y = lhs.x * matrix[0][1] + lhs.y * matrix[1][1] + lhs.z * matrix[2][1];
-    retval.z = lhs.x * matrix[0][2] + lhs.y * matrix[1][2] + lhs.z * matrix[2][2];
+    retval.x = (matrix[0][0] * rhs.x) + (matrix[0][1] * rhs.y) + (matrix[0][2] * rhs.z);
+    retval.y = (matrix[1][0] * rhs.x) + (matrix[1][1] * rhs.y) + (matrix[1][2] * rhs.z);
+    retval.z = (matrix[2][0] * rhs.x) + (matrix[2][1] * rhs.y) + (matrix[2][2] * rhs.z);
     return retval;
+}
+
+double to_radians(double degree) {
+    return degree * (M_PI/180.0);
+}
+
+vector<point> translateZ(vector<point> inputPoints, double zOffset) {
+    vector<point> returnPoints;
+    for(auto it = inputPoints.begin(); it < inputPoints.end(); it++) {
+        point p = *it;
+        p.z += zOffset;
+        returnPoints.push_back(p);
+    }
+    return returnPoints;
 }
 
 vector<point> drawQuad(point ll, point ur) {
@@ -361,20 +375,24 @@ main(int argc, char ** argv) {
     zTranslation += 1;
 
     // Draw link 1
-    point l1LL(-.5,-.5,0 + zTranslation);
-    point l1UR(.5,.5,link1Length + zTranslation);
+    point l1LL(-.5,-.5,0);
+    point l1UR(.5,.5,link1Length);
     vector<point> link1Vertices = drawQuad(l1LL, l1UR);
+    link1Vertices = translateZ(link1Vertices, zTranslation);
     Node* link1Separator = constructQuadNode(link1Vertices);
     root->addChild(link1Separator);
     zTranslation += link1Length;
 
     // Draw link 2
     float l2 = 3.0;
+    theta2 = 37.0;
+    double theta2Radians = to_radians(theta2);
+
     // Now to apply a rotation, create rotation matrix
     vector<double> row1;
-    row1.push_back(cos(theta2));
+    row1.push_back(cos(theta2Radians));
     row1.push_back(0);
-    row1.push_back(sin(theta2));
+    row1.push_back(sin(theta2Radians));
 
     vector<double> row2;
     row2.push_back(0);
@@ -382,26 +400,29 @@ main(int argc, char ** argv) {
     row2.push_back(0);
 
     vector<double> row3;
-    row3.push_back(-1 * sin(theta2));
+    row3.push_back(-1 * sin(theta2Radians));
     row3.push_back(0);
-    row3.push_back(cos(theta2));
+    row3.push_back(cos(theta2Radians));
 
     vector<vector<double>> rotationMatrixLink2;
     rotationMatrixLink2.push_back(row1);
     rotationMatrixLink2.push_back(row2);
     rotationMatrixLink2.push_back(row3);
 
+    point l2LL(-.5,-.5,0);
+    point l2UR(.5,.5,l2);
 
-    point l2LL(-.5,-.5,0 + zTranslation);
-    point l2UR(.5,.5,l2 + zTranslation);
+    vector<point> link2Vertices = drawQuad(l2LL, l2UR);
 
-    point l2LLRotated = rotateVector(l2LL,rotationMatrixLink2);
-    point l2URRotated = rotateVector(l2UR,rotationMatrixLink2);
+    vector<point> link2VerticesRotated;
+    for(auto it = link2Vertices.begin(); it < link2Vertices.end(); it++) {
+        point p = *it;
+        link2VerticesRotated.push_back(rotateVector(rotationMatrixLink2, p));
+    }
 
-    vector<point> link2Vertices = drawQuad(l2LLRotated, l2URRotated);
+    vector<point> link2VerticesRotatedTranslated = translateZ(link2VerticesRotated, zTranslation);
     
-
-    Node* link2Separator = constructQuadNode(link2Vertices);
+    Node* link2Separator = constructQuadNode(link2VerticesRotatedTranslated);
     root->addChild(link2Separator);
     zTranslation += l2;
     /*
