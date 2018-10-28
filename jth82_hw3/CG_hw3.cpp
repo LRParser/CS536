@@ -342,7 +342,7 @@ main(int argc, char ** argv)
     u = 0.0;
     v = 0.0;
 
-    while(u <= 1) {
+    while(u <= 1 + 1e-9) {
 
         while(v <= 1) {
 
