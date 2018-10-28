@@ -344,7 +344,7 @@ main(int argc, char ** argv)
 
     while(u <= 1 + 1e-9) {
 
-        while(v <= 1) {
+        while(v <= 1 + 1e-9) {
 
             if(debug) {
             }
