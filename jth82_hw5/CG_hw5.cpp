@@ -518,7 +518,6 @@ main(int argc, char ** argv) {
 
     Node* link2Separator = constructQuadNode(link2VerticesRotatedTranslated);
     root->addChild(link2Separator);
-    zTranslation += link2Length;
 
     // Draw link 3
 
@@ -543,7 +542,6 @@ main(int argc, char ** argv) {
 
     Node* link3Separator = constructQuadNode(link3VerticesRotatedTranslated);
     root->addChild(link3Separator);
-    zTranslation += link3Length;
 
 
     if(debug) {
@@ -554,9 +552,6 @@ main(int argc, char ** argv) {
 
     Node* shapeHints = new Node("ShapeHints {","vertexOrdering        COUNTERCLOCKWISE\n","}");
     root->addChild(shapeHints);
-
-
-
 
     string ivContent = root->getString();
     ostringstream outputContent;
