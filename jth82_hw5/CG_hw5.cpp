@@ -340,6 +340,19 @@ vector<vector<double>> getYRotationMatrix(double thetaRadians) {
     return rotationMatrix;
 }
 
+vector<vector<double>> getZRotationMatrix(double thetaRadians) {
+
+    vector<vector<double>> rotationMatrix = getIdentityMatrix();
+
+    rotationMatrix[0][0] = cos(thetaRadians);
+    rotationMatrix[0][1] = -1 * sin(thetaRadians);
+
+    rotationMatrix[1][0] = sin(thetaRadians);
+    rotationMatrix[1][1] = cos(thetaRadians);
+
+    return rotationMatrix;
+}
+
 double dot(vector<double> row, vector<double> column) {
     double retVal = 0.0;
     for(int i = 0; i < 4; i++) {
@@ -427,42 +440,42 @@ main(int argc, char ** argv) {
             if (i + 1 < argc) {
                 theta1 = std::stod(std::string(argv[i + 1]));
             } else {
-                std::cerr << "Must provide num_u value after -u argument" << std::endl;
+                std::cerr << "Must provide theta1 value after -t argument" << std::endl;
             }
         } else if (std::string(argv[i]) == "-u") {
 
             if (i + 1 < argc) {
                 theta2 = std::stod(std::string(argv[i + 1]));
             } else {
-                std::cerr << "Must provide num_v value after -v argument" << std::endl;
+                std::cerr << "Must provide theta2 value after -u argument" << std::endl;
             }
         } else if (std::string(argv[i]) == "-v") {
 
             if (i + 1 < argc) {
                 theta3 = std::stod(std::string(argv[i + 1]));
             } else {
-                std::cerr << "Must provide r value after -r argument" << std::endl;
+                std::cerr << "Must provide theta3 value after -v argument" << std::endl;
             }
         } else if (std::string(argv[i]) == "-l") {
 
             if (i + 1 < argc) {
                 link1Length = std::stod(std::string(argv[i + 1]));
             } else {
-                std::cerr << "Must provide r value after -r argument" << std::endl;
+                std::cerr << "Must provide link1Length value after -l argument" << std::endl;
             }
         } else if (std::string(argv[i]) == "-m") {
 
             if (i + 1 < argc) {
                 link2Length = std::stod(std::string(argv[i + 1]));
             } else {
-                std::cerr << "Must provide A value after -A argument" << std::endl;
+                std::cerr << "Must provide link2Length value after -m argument" << std::endl;
             }
         } else if (std::string(argv[i]) == "-n") {
 
             if (i + 1 < argc) {
                 link3Length = std::stod(std::string(argv[i + 1]));
             } else {
-                std::cerr << "Must provide radius value after -B argument" << std::endl;
+                std::cerr << "Must provide link3Length value after -n argument" << std::endl;
             }
         }
         else if (std::string(argv[i]) == "-d") {
@@ -483,19 +496,19 @@ main(int argc, char ** argv) {
     root->addChild(baseSeparator);
 
     // Draw link 1
+    float theta1Radians = to_radians(theta1);
     point l1LL(-.5,-.5,0);
     point l1UR(.5,.5,link1Length);
     vector<point> link1Vertices = drawQuad(l1LL, l1UR);
     point link1Translation;
     link1Translation.z = baseHeight;
     vector<vector<double>> translationMatrixLink1 = getTranslationMatrix(link1Translation);
-    vector<vector<double>> rotationMatrixLink1 = getIdentityMatrix(); // Update later
+    vector<vector<double>> rotationMatrixLink1 = getZRotationMatrix(theta1Radians); //  getIdentityMatrix(); // Update later
 
-    vector<vector<double>> transformationMatrixLink1 = translationMatrixLink1; //  matMult(translationMatrixLink1,rotationMatrixLink1);
+    vector<vector<double>> transformationMatrixLink1 = matMult(rotationMatrixLink1,translationMatrixLink1); //  matMult(translationMatrixLink1,rotationMatrixLink1);
     link1Vertices = applyTransformationMatrixToPoints(link1Vertices, transformationMatrixLink1);
     Node* link1Separator = constructQuadNode(link1Vertices);
     root->addChild(link1Separator);
-    zTranslation += link1Length;
 
     // Draw link 2
 
@@ -521,13 +534,10 @@ main(int argc, char ** argv) {
 
     // Draw link 3
 
-    cerr << theta3 << endl;
-    cerr << link3Length << endl;
-
     double theta3Radians = to_radians(theta2 + theta3);
     point translationValsLink3;
-    translationValsLink2.z = link2Length;
-    vector<vector<double>> translationMatrixLink3 = getTranslationMatrix(translationValsLink2);
+    translationValsLink3.z = link2Length;
+    vector<vector<double>> translationMatrixLink3 = getTranslationMatrix(translationValsLink3);
     vector<vector<double>> rotationMatrixLink3 = getYRotationMatrix(theta3Radians);
 
     vector<vector<double>> link3TransformationMatrix = matMult(link2TransformationMatrix,matMult(rotationMatrixLink3,translationMatrixLink3));
