@@ -1,0 +1,21 @@
+CS536: Computer Graphics
+Prof. Breen
+
+Assignment 
+
+My program supports interpolating/drawing a 3D bi-cubic Bezier patch based on 16 3D points.
+It outputs both a flat-shaded and smooth-shaded rendering of the patch based on configuration (-F or -S, respectively.
+The file with the 16 control points is given with the -f parameter, the u increment for interpolation is given by -u,
+the v increment is given by -v and the control points are shown as spheres, the radius of which are specified by the
+-r parameter.
+
+My surface normals are calculated in CG_hw3.cpp in the calculateNormal function on lines 121 to 152.
+
+In this way the Hermite representation can be converted to Bezier form, and then we again approximate the curve with a polyline.
+We can calculate ourselves intermediate tangent vectors from the given control points (except for the first and last tangents,
+which are given in the input file).
+
+The program is written in C++ on Ubuntu 16.04, using the g++ compiler. The main() function is contained in CG_hw3.cpp.
+The class Node.cpp implements a simple means of "writing out" the created graphics objects in Open Inventor format.
+
+It can be compiled via the command 'make'
