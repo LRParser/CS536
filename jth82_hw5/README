@@ -1,21 +1,15 @@
 CS536: Computer Graphics
 Prof. Breen
 
-Assignment 5 
+Assignment 5
 
-My program supports rendering a 3D hierarchical model that consists of a base as well as three linked objects - each part, the base and three links, are rendered via using cuboids (that is, 6 faces each made out of 2 triangles). The program supports the following configuration flags, defined with reference to the image on the assignment page:
+My program supports evaluating a hierarchical, robot-like model. It uses homogenous coordinate representation of 3D points (e.g,. 4-tuples) to apply composite matrix transformations that accomplish the required scaling, translation and rotation operations. The program works by maniuplating the positions of 4 different links based on command-line arguments.
 
--t theta1
--u theta2
--v theta3
--l link1Val
--m link2Val
--n link3Val
+With reference to the image provided for the assignment, the -t parameter determines the theta 1 angle, the -u parameter determines the theta 2 angle, the -v parameter determines the theta 3 angle. The -l value determines the link 1 length, the -m value determines the link 2 length, and the -n value determines the link 3 length.
 
-All points and transformations are specified in world coordinates. This is achieved by first rendering the cuboids, then applying a translation and/or rotation matrix to them as necessary. The product of the rotation and translation matrix is referred to as a transformation matrix, and the transformation matrices of links that appear later in the hierarchy (e.g., link 3) are the products of the prior matrix (e.g., transformation matrix for link 2) and the required rotation/translation matrices for link 3. In this way to model appears to be correctly joined, and translations applied to earlier links correctly impact later links.
+The most difficult part of this assignment was ensuring that the relevant transformation matricies were applied in the correct order, as matrix multiplicate is non-commutative.
 
-A number of simple functions for degree/radians conversion, matrix multiplication, and creation of standard rotation matrices were defined; these are to_radians, getIdentityMatrix, getYRotationMatrix, getZRotationMatrix, matMult, and getTranslationMatrix, respectively. The applyTransformationMatrix to points multiplies a point (represented as a column vector) with a transformation matrix. The drawQuad function takes the lower-left and upper-right coordinates of a cuboid and returns 8 points representing the vertices of this cuboid; the constructQuadNode takes these 8 vertices and returns 12 triangles representing the 6 distinct faces of the quad.
+The program is written in C++ on Ubuntu 16.04, using the g++ compiler. The main() function is contained in CG_hw5.cpp.
+The class Node.cpp implements a simple means of "writing out" the created graphics objects in Open Inventor format.
 
-By combining input parsing of command line arguments with the above-specified functions for calculating and rotating matrices, along with the above-specified functions for rendering cuboids, as well as the OpenInventor serialization code implemented in Node.cpp, we are able to render a valid OpenInventor representation of the hierarchical model to standard output.
-
-The assignment can be compiled using the Makefile via the make command and run using ./CG_hw5. It can also be compiled and run via make run. It was written in C++ and tested on Ubuntu 16.04. CG_hw5.cpp is the file containing main().
+It can be compiled via the command 'make'

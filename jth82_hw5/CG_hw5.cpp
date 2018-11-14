@@ -25,17 +25,20 @@ public:
     double x;
     double y;
     double z;
+    double w;
 
     point(double x_i, double y_i, double z_i) {
         x = x_i;
         y = y_i;
         z = z_i;
+        w = 1.0;
     }
 
     point() {
         x = 0.0;
         y = 0.0;
         z = 0.0;
+        w = 1.0;
     }
 
     point operator+(point a) {
@@ -45,8 +48,6 @@ public:
     point operator-(point a) {
         return {x-a.x,y-a.y,z-a.z};
     }
-
-
 
     point operator*(double a) {
         return {a*x,a*y,a*z};
@@ -60,155 +61,10 @@ public:
 };
 
 bool operator<(point a, point b) {
-return std::make_tuple(a.x,a.y,a.z) <  std::make_tuple(b.x, b.y, b.z);
-}
-
-point pointMult(double factor, point srcPt) {
-    point newPoint;
-    newPoint.x = srcPt.x * factor;
-    newPoint.y = srcPt.y * factor;
-    newPoint.z = srcPt.z * factor;
-    return newPoint;
-}
-
-point pointAdd(point point1, point point2) {
-    point point3;
-    point3.x = point1.x + point2.x;
-    point3.y = point1.y + point2.y;
-    point3.z = point1.z + point2.z;
-    return point3;
-}
-
-map<int,double> factorialMap;
-
-
-
-double fact(int k) {
-    if (k == 0) {
-        return 1;
-    }
-    else {
-
-        if(memoize) {
-            // Memoize for performance
-            auto iter = factorialMap.find(k);
-            if (iter != factorialMap.end()) {
-                return iter->second;
-            }
-            else {
-                double retVal = k * fact(k-1);
-                factorialMap.insert(std::pair<int,double>(k,retVal));
-                return retVal;
-            }
-        }
-        else {
-            double retVal = k * fact(k-1);
-            return retVal;
-        }
-
-
-    }
-
-
-
-}
-
-point calculateNormal(point point1, point point2, point point3) {
-
-    point vec1 = point1 - point2;
-    point vec2 = point1 - point3;
-
-    if(debug) {
-        cerr << "Cross of: (" << vec1.x << ", " << vec1.y << ", " << vec1.z << ")" << endl;
-        cerr << "  and of: (" << vec2.x << ", " << vec2.y << ", " << vec2.z << ")" <<  endl;
-    }
-
-    point cross;
-    cross.z = (vec1.x*vec2.y)-(vec2.x*vec1.y);
-    cross.y = (vec1.z*vec2.x)-(vec2.z*vec1.x);
-    cross.x = (vec1.y*vec2.z)-(vec2.y*vec1.z);
-
-    if(debug) {
-        cerr << "Is      : " << cross.x << ", " << cross.y << ", " << cross.z << endl;
-    }
-
-    // Now we need to normalize so it becomes a unit vector
-    point normalizePt;
-    normalizePt.x = pow(cross.x,2);
-    normalizePt.y = pow(cross.y,2);
-    normalizePt.z = pow(cross.z,2);
-    double pointSums = sqrt(normalizePt.x + normalizePt.y + normalizePt.z);
-
-    cross.x = cross.x / pointSums;
-    cross.y = cross.y / pointSums;
-    cross.z = cross.z / pointSums;
-
-    return cross;
+return std::make_tuple(a.x,a.y,a.z,a.w) <  std::make_tuple(b.x, b.y, b.z,b.w);
 }
 
 
-double binomial(int k, int i) {
-    return fact(k) / (fact(i)*fact(k-i));
-}
-
-double sgn(double s) {
-    if(s < 0) {
-        return -1;
-    }
-    else if(s == 0) {
-        return 0;
-    }
-    else {
-        return 1;
-    }
-}
-
-double myAbs(double a) {
-    if (a < 0) {
-        return -1*a;
-    }
-    else {
-        return a;
-    }
-}
-
-double c(double w, double m) {
-    return sgn(cos(w))*pow(myAbs(cos(w)),m);
-}
-
-double s(double w, double m) {
-    return sgn(sin(w))*pow(myAbs(sin(w)),m);
-}
-
-point calcNormal(double A, double B, double C, double s1, double s2, double u, double v) {
-    point normal;
-    normal.x = ((float)1/A)*c(v,2-s1)*c(u,2-s2);
-    normal.y = ((float)1/B)*c(v,2-s1)*s(u,2-s2);
-    normal.z = ((float)1/C)*s(v,2-s1);
-    return normal;
-
-}
-
-static int vTexIndex = 0;
-
-int mapVertex(point p1, vector<point> & vertices, map<point,int>& vertexIndexMapping, map<int,point> & indexVertexMapping) {
-    vertices.push_back(p1);
-    int assignedIndex = vTexIndex;
-    vertexIndexMapping[p1] = assignedIndex;
-    indexVertexMapping[assignedIndex] = p1;
-    vTexIndex++;
-    return assignedIndex;
-}
-
-class quadresult {
-public:
-    Node* sep;
-    vector<point> vertices;
-    quadresult(Node* sep_i, vector<point> vertices_i) {
-        sep=sep_i;
-        vertices = vertices_i;
-    }
-};
 
 Node* constructQuadNode(vector<point> vertices) {
 
@@ -249,13 +105,7 @@ Node* constructQuadNode(vector<point> vertices) {
     return baseSeparator;
 }
 
-point vectorMatMult(vector<vector<double>> matrix, point rhs) {
-    point retval;
-    retval.x = (matrix[0][0] * rhs.x) + (matrix[0][1] * rhs.y) + (matrix[0][2] * rhs.z) + (matrix[0][3] * 1);
-    retval.y = (matrix[1][0] * rhs.x) + (matrix[1][1] * rhs.y) + (matrix[1][2] * rhs.z) + (matrix[1][3] * 1);
-    retval.z = (matrix[2][0] * rhs.x) + (matrix[2][1] * rhs.y) + (matrix[2][2] * rhs.z) + (matrix[2][3] * 1);
-    return retval;
-}
+
 
 double to_radians(double degree) {
     return degree * (M_PI/180.0);
@@ -342,6 +192,17 @@ double dot(vector<double> row, vector<double> column) {
     return retVal;
 }
 
+point matrixVectorMult(vector<vector<double>> matrix, point rhs) {
+    point retval;
+
+    retval.x = (matrix[0][0] * rhs.x) + (matrix[0][1] * rhs.y) + (matrix[0][2] * rhs.z) + (matrix[0][3] * rhs.w);
+    retval.y = (matrix[1][0] * rhs.x) + (matrix[1][1] * rhs.y) + (matrix[1][2] * rhs.z) + (matrix[1][3] * rhs.w);
+    retval.z = (matrix[2][0] * rhs.x) + (matrix[2][1] * rhs.y) + (matrix[2][2] * rhs.z) + (matrix[2][3] * rhs.w);
+    retval.w = (matrix[3][0] * rhs.x) + (matrix[3][1] * rhs.y) + (matrix[3][2] * rhs.z) + (matrix[3][3] * rhs.w);
+
+    return retval;
+}
+
 vector<vector<double>> matMult(vector<vector<double>> lhs, vector<vector<double>> rhs) {
     vector<vector<double>> result;
 
@@ -365,36 +226,21 @@ vector<vector<double>> matMult(vector<vector<double>> lhs, vector<vector<double>
 
 
 vector<vector<double>> getTranslationMatrix(point p) {
-        vector<vector<double>> result;
-
-        for(int i = 0; i < 4; i++) {
-            vector<double> row;
-            for(int j = 0; j < 4; j++) {
-                row.push_back(0.0);
-            }
-            result.push_back(row);
-        }
-
-        // Now make it an identity matrix
-        result[0][0] = 1.0;
-        result[1][1] = 1.0;
-        result[2][2] = 1.0;
-        result[3][3] = 1.0;
+    vector<vector<double>> translationMatrix = getIdentityMatrix();
 
 
-    // Plus add in the desired points
-        result[0][3] = p.x;
-        result[1][3] = p.y;
-        result[2][3] = p.z;
+    translationMatrix[0][3] = p.x;
+    translationMatrix[1][3] = p.y;
+    translationMatrix[2][3] = p.z;
 
-        return result;
+    return translationMatrix;
 }
 
 vector<point> applyTransformationMatrixToPoints(vector<point> input, vector<vector<double>> matrix) {
     vector<point> retVal;
     for(auto it = input.begin(); it < input.end(); it++) {
         point p = *it;
-        retVal.push_back(vectorMatMult(matrix, p));
+        retVal.push_back(matrixVectorMult(matrix, p));
     }
     return retVal;
 }
@@ -485,7 +331,7 @@ main(int argc, char ** argv) {
     vector<vector<double>> translationMatrixLink1 = getTranslationMatrix(link1Translation);
     vector<vector<double>> rotationMatrixLink1 = getZRotationMatrix(theta1Radians); //  getIdentityMatrix(); // Update later
 
-    vector<vector<double>> transformationMatrixLink1 = matMult(rotationMatrixLink1,translationMatrixLink1); //  matMult(translationMatrixLink1,rotationMatrixLink1);
+    vector<vector<double>> transformationMatrixLink1 = matMult(translationMatrixLink1,rotationMatrixLink1); // matMult(rotationMatrixLink1,translationMatrixLink1); //
     link1Vertices = applyTransformationMatrixToPoints(link1Vertices, transformationMatrixLink1);
     Node* link1Separator = constructQuadNode(link1Vertices);
     root->addChild(link1Separator);
@@ -514,7 +360,7 @@ main(int argc, char ** argv) {
 
     // Draw link 3
 
-    double theta3Radians = to_radians(theta2 + theta3);
+    double theta3Radians = to_radians(theta3);
     point translationValsLink3;
     translationValsLink3.z = link2Length;
     vector<vector<double>> translationMatrixLink3 = getTranslationMatrix(translationValsLink3);
@@ -532,6 +378,40 @@ main(int argc, char ** argv) {
 
     Node* link3Separator = constructQuadNode(link3VerticesRotatedTranslated);
     root->addChild(link3Separator);
+
+
+    // Now we need to place a sphere at the origin and at the end of the fourth link
+    // Both have radius of 0.2
+    std::ostringstream radiusStr;
+    radiusStr << "radius  " << 0.2 << std::endl;
+    Node* sphereNode = new Node("Sphere {",radiusStr.str(),"}");
+
+    // Sphere at origin
+    Node* originPointSep = new Node("Separator {","","}");
+    point originPoint;
+    std::ostringstream transformStrOrigin;
+    transformStrOrigin << "translation " << originPoint.x << " " << originPoint.y << " " << originPoint.z << std::endl;
+    Node* originTranslation = new Node("Transform {",transformStrOrigin.str(),"}");
+    originPointSep->addChild(originTranslation);
+    originPointSep->addChild(sphereNode);
+    root->addChild(originPointSep);
+
+    // Sphere at end of final link
+    Node* finalPointSep = new Node("Separator {","","}");
+
+    // Need a translation to the top of the final link
+
+    vector<vector<double>> finalPointTransform = matMult(link3TransformationMatrix,getTranslationMatrix(point(0,0,0)));
+    point finalPoint = matrixVectorMult(finalPointTransform,point(0,0,link3Length));
+    // Translate it by z
+
+    std::ostringstream transformStrFinal;
+    transformStrFinal << "translation " << finalPoint.x << " " << finalPoint.y << " " << finalPoint.z << std::endl;
+    Node* translationFinal = new Node("Transform {",transformStrFinal.str(),"}");
+    finalPointSep->addChild(translationFinal);
+    finalPointSep->addChild(sphereNode);
+    root->addChild(finalPointSep);
+
 
 
     if(debug) {
